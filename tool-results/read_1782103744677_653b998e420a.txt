@@ -1,0 +1,459 @@
+     1→'use client'
+     2→
+     3→import { useRef, useState } from 'react'
+     4→import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion'
+     5→import HeartWords from '@/components/HeartWords'
+     6→import Image from 'next/image'
+     7→
+     8→// ─── Fonts ───
+     9→const playfair = { fontFamily: "var(--font-playfair), 'Playfair Display', 'Georgia', serif" }
+    10→const parisienne = { fontFamily: "var(--font-parisienne), 'Parisienne', cursive" }
+    11→
+    12→// ─── Floating Hearts Background ───
+    13→function FloatingHearts() {
+    14→  return (
+    15→    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    16→      {[...Array(20)].map((_, i) => (
+    17→        <motion.div
+    18→          key={`fh-${i}`}
+    19→          className="absolute"
+    20→          style={{
+    21→            left: `${Math.random() * 100}%`,
+    22→            fontSize: `${0.3 + Math.random() * 0.7}rem`,
+    23→            opacity: 0.06 + Math.random() * 0.1,
+    24→          }}
+    25→          initial={{ y: '110vh', rotate: 0 }}
+    26→          animate={{
+    27→            y: '-10vh',
+    28→            rotate: [0, 15, -10, 20, -15, 0],
+    29→            x: [(Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50],
+    30→          }}
+    31→          transition={{ duration: 14 + Math.random() * 18, repeat: Infinity, delay: Math.random() * 15, ease: 'linear' }}
+    32→        >
+    33→          ♥
+    34→        </motion.div>
+    35→      ))}
+    36→    </div>
+    37→  )
+    38→}
+    39→
+    40→function ScrollIndicator() {
+    41→  return (
+    42→    <motion.div
+    43→      className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+    44→      initial={{ opacity: 0 }}
+    45→      animate={{ opacity: 1 }}
+    46→      transition={{ delay: 5.5, duration: 1 }}
+    47→    >
+    48→      <span className="text-[0.65rem] tracking-[0.4em] uppercase" style={{ ...parisienne, color: 'rgba(255,180,190,0.35)', fontSize: '0.85rem' }}>
+    49→        fais défiler
+    50→      </span>
+    51→      <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} style={{ color: 'rgba(255,120,140,0.4)' }}>
+    52→        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M7 13l5 5 5-5M7 6l5 5 5-5" /></svg>
+    53→      </motion.div>
+    54→    </motion.div>
+    55→  )
+    56→}
+    57→
+    58→function Divider() {
+    59→  return (
+    60→    <div className="flex items-center justify-center py-10 md:py-14">
+    61→      <motion.div className="flex items-center gap-4" initial={{ opacity: 0, scaleX: 0 }} whileInView={{ opacity: 1, scaleX: 1 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 1.2 }}>
+    62→        <div className="h-px w-12 md:w-20" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,100,120,0.3))' }} />
+    63→        <motion.span className="text-base" animate={{ scale: [1, 1.25, 1], opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}>♥</motion.span>
+    64→        <div className="h-px w-12 md:w-20" style={{ background: 'linear-gradient(90deg, rgba(255,100,120,0.3), transparent)' }} />
+    65→      </motion.div>
+    66→    </div>
+    67→  )
+    68→}
+    69→
+    70→function PoemLine({ children, delay = 0, highlight = false, small = false }: { children: string; delay?: number; highlight?: boolean; small?: boolean }) {
+    71→  const ref = useRef(null)
+    72→  const isInView = useInView(ref, { once: true, margin: '-50px' })
+    73→  return (
+    74→    <motion.p ref={ref} className="text-center" style={{ ...playfair, overflow: 'hidden', fontSize: small ? '1rem' : highlight ? '1.2rem' : '1.05rem', letterSpacing: small ? '0.02em' : '0.04em', lineHeight: small ? 1.8 : 2.2 }}
+    75→      initial={{ opacity: 0, y: 25, filter: 'blur(6px)' }}
+    76→      animate={isInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+    77→      transition={{ duration: 1.4, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
+    78→    >
+    79→      {children}
+    80→    </motion.p>
+    81→  )
+    82→}
+    83→
+    84→// ═══════════════════════════════════════════════
+    85→// ─── POLAROID GALLERY ───
+    86→// ═══════════════════════════════════════════════
+    87→function PolaroidGallery() {
+    88→  const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null)
+    89→  const photos = [
+    90→    { src: '/photos/roxane-1.jpg', caption: 'Mon rayon de soleil', rotation: -6, x: -8, y: 15 },
+    91→    { src: '/photos/roxane-2.jpg', caption: 'Celle qui fait battre mon cœur', rotation: 4, x: 12, y: -10 },
+    92→    { src: '/photos/roxane-3.jpg', caption: 'La plus belle femme du monde', rotation: -3, x: -15, y: -5 },
+    93→    { src: '/photos/roxane-4.jpg', caption: 'Mon bonheur à moi', rotation: 7, x: 5, y: 20 },
+    94→  ]
+    95→
+    96→  return (
+    97→    <section id="galerie" className="relative py-20 md:py-28 px-6">
+    98→      <motion.div className="text-center mb-16 md:mb-20">
+    99→        <motion.p className="text-sm md:text-base tracking-[0.3em] uppercase mb-3" style={{ ...parisienne, color: 'rgba(255,150,165,0.5)', fontSize: '1rem' }}
+   100→          initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}>
+   101→          quelques souvenirs
+   102→        </motion.p>
+   103→        <motion.h2 className="text-3xl md:text-5xl lg:text-6xl font-normal tracking-wide" style={{ ...playfair, color: 'rgba(255,190,200,0.9)', fontWeight: 400 }}
+   104→          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1.2, delay: 0.2 }}>
+   105→          La Plus Belle
+   106→        </motion.h2>
+   107→      </motion.div>
+   108→
+   109→      {/* Polaroid scatter layout */}
+   110→      <div className="relative max-w-3xl mx-auto" style={{ height: 'clamp(400px, 60vw, 600px)' }}>
+   111→        {photos.map((photo, i) => (
+   112→          <motion.div
+   113→            key={i}
+   114→            className="absolute cursor-pointer"
+   115→            style={{
+   116→              left: `${25 + i * 15 + photo.x}%`,
+   117→              top: `${10 + (i % 2) * 30 + photo.y}%`,
+   118→              width: 'clamp(140px, 22vw, 220px)',
+   119→              zIndex: 10 - i,
+   120→            }}
+   121→            initial={{ opacity: 0, y: 60, rotate: 0, scale: 0.8 }}
+   122→            whileInView={{ opacity: 1, y: 0, rotate: photo.rotation, scale: 1 }}
+   123→            viewport={{ once: true, margin: '-30px' }}
+   124→            transition={{ duration: 1, delay: i * 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+   125→            whileHover={{ y: -15, rotate: 0, scale: 1.08, zIndex: 20 }}
+   126→            onClick={() => setSelectedPhoto(i)}
+   127→          >
+   128→            {/* Polaroid card */}
+   129→            <div className="bg-white/[0.95] p-2.5 pb-8 md:p-3 md:pb-10 relative" style={{
+   130→              boxShadow: '0 4px 20px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2)',
+   131→              borderRadius: '2px',
+   132→            }}>
+   133→              <div className="relative aspect-[3/4] overflow-hidden" style={{ borderRadius: '1px' }}>
+   134→                <Image src={photo.src} alt="Roxane" fill className="object-cover" sizes="220px" />
+   135→                {/* Slight sepia/warm overlay */}
+   136→                <div className="absolute inset-0 mix-blend-multiply" style={{ background: 'rgba(255,240,230,0.15)' }} />
+   137→              </div>
+   138→              {/* Caption */}
+   139→              <p className="absolute bottom-2.5 md:bottom-3 left-0 right-0 text-center" style={{ ...parisienne, color: '#6b4c5a', fontSize: '0.8rem' }}>
+   140→                {photo.caption}
+   141→              </p>
+   142→            </div>
+   143→            {/* Tape effect on top */}
+   144→            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-10 h-4 md:w-12 md:h-5 -rotate-1" style={{
+   145→              background: 'rgba(255,220,180,0.5)',
+   146→              backdropFilter: 'blur(1px)',
+   147→              borderRadius: '1px',
+   148→            }} />
+   149→          </motion.div>
+   150→        ))}
+   151→      </div>
+   152→
+   153→      {/* Lightbox */}
+   154→      <AnimatePresence>
+   155→        {selectedPhoto !== null && (
+   156→          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(5,2,3,0.95)' }}
+   157→            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedPhoto(null)}>
+   158→            <motion.div className="relative max-w-md w-full aspect-[3/4] rounded-sm overflow-hidden"
+   159→              style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}
+   160→              initial={{ scale: 0.85, opacity: 0, rotate: -3 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} exit={{ scale: 0.85, opacity: 0, rotate: 3 }}
+   161→              transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }} onClick={(e) => e.stopPropagation()}>
+   162→              <Image src={photos[selectedPhoto].src} alt="Roxane" fill className="object-cover" sizes="(max-width: 768px) 85vw, 400px" />
+   163→              <div className="absolute inset-0" style={{ boxShadow: 'inset 0 0 80px rgba(0,0,0,0.3)' }} />
+   164→            </motion.div>
+   165→            <motion.p className="absolute bottom-8 left-0 right-0 text-center" style={{ ...parisienne, color: 'rgba(255,200,210,0.8)', fontSize: '1.2rem' }}
+   166→              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+   167→              {photos[selectedPhoto].caption}
+   168→            </motion.p>
+   169→            <motion.button className="absolute top-6 right-6 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
+   170→              onClick={() => setSelectedPhoto(null)} whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.15)' }} whileTap={{ scale: 0.9 }}>
+   171→              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+   172→            </motion.button>
+   173→            {/* Navigation */}
+   174→            <motion.button className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+   175→              onClick={(e) => { e.stopPropagation(); setSelectedPhoto(selectedPhoto === 0 ? photos.length - 1 : selectedPhoto - 1) }} whileHover={{ scale: 1.1 }}>
+   176→              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M15 18l-6-6 6-6" /></svg>
+   177→            </motion.button>
+   178→            <motion.button className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+   179→              onClick={(e) => { e.stopPropagation(); setSelectedPhoto((selectedPhoto + 1) % photos.length) }} whileHover={{ scale: 1.1 }}>
+   180→              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 18l6-6-6-6" /></svg>
+   181→            </motion.button>
+   182→          </motion.div>
+   183→        )}
+   184→      </AnimatePresence>
+   185→    </section>
+   186→  )
+   187→}
+   188→
+   189→// ─── POEM SECTION ───
+   190→function PoemSection() {
+   191→  const ref = useRef(null)
+   192→  const isInView = useInView(ref, { once: true, margin: '-100px' })
+   193→  return (
+   194→    <section id="poeme" className="relative min-h-screen flex flex-col items-center justify-center px-6 py-20">
+   195→      <motion.div ref={ref} className="absolute w-[400px] h-[400px] rounded-full pointer-events-none"
+   196→        style={{ background: 'radial-gradient(circle, rgba(180,40,80,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }}
+   197→        initial={{ opacity: 0, scale: 0.5 }} animate={isInView ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 2 }} />
+   198→
+   199→      <motion.div className="text-center mb-14 relative z-10">
+   200→        <motion.p className="tracking-[0.3em] uppercase mb-3" style={{ ...parisienne, color: 'rgba(255,150,165,0.5)', fontSize: '0.9rem' }}
+   201→          initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}>
+   202→          mots du cœur
+   203→        </motion.p>
+   204→        <motion.h2 className="text-3xl md:text-4xl lg:text-5xl font-normal" style={{ ...playfair, color: 'rgba(255,190,200,0.9)', letterSpacing: '0.04em', fontWeight: 400 }}
+   205→          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1.2 }}>
+   206→          Mon Poème pour Toi
+   207→        </motion.h2>
+   208→      </motion.div>
+   209→
+   210→      <div className="max-w-lg space-y-4 relative z-10">
+   211→        <PoemLine delay={0.2}>Roxane, dans le silence de la nuit,</PoemLine>
+   212→        <PoemLine delay={0.45}>je murmure ton nom dans le vent,</PoemLine>
+   213→        <PoemLine delay={0.7}>et chaque étoile qui s&apos;allume</PoemLine>
+   214→        <PoemLine delay={0.95}>me rappelle que tu existes.</PoemLine>
+   215→        <div className="py-3" />
+   216→        <PoemLine delay={1.3}>Tes yeux sont deux océans</PoemLine>
+   217→        <PoemLine delay={1.55}>où je voudrais me noyer pour toujours,</PoemLine>
+   218→        <PoemLine delay={1.8}>ton sourire est le soleil</PoemLine>
+   219→        <PoemLine delay={2.05}>qui réchauffe mes jours les plus froids.</PoemLine>
+   220→        <div className="py-3" />
+   221→        <PoemLine delay={2.4}>Chaque seconde loin de toi, Roxane,</PoemLine>
+   222→        <PoemLine delay={2.65}>est une éternité qui me dévore,</PoemLine>
+   223→        <PoemLine delay={2.9}>et chaque instant à tes côtés</PoemLine>
+   224→        <PoemLine delay={3.15}>est un paradis que je ne veux pas quitter.</PoemLine>
+   225→        <div className="py-3" />
+   226→        <PoemLine delay={3.5} highlight>Roxane, tu es la plus belle histoire</PoemLine>
+   227→        <PoemLine delay={3.75} highlight>que la vie m&apos;ait jamais offerte.</PoemLine>
+   228→      </div>
+   229→    </section>
+   230→  )
+   231→}
+   232→
+   233→// ─── REASONS SECTION ───
+   234→function ReasonsSection() {
+   235→  const reasons = [
+   236→    { emoji: '✨', text: 'Ton rire, Roxane, qui illumine ma journée entière' },
+   237→    { emoji: '🌙', text: 'Ta douceur qui apaise mon cœur' },
+   238→    { emoji: '🔥', text: 'Ta passion qui me inspire chaque jour' },
+   239→    { emoji: '🦋', text: 'La façon dont tu me fais sentir vivant' },
+   240→    { emoji: '🌹', text: 'Ton regard, Roxane, qui me fait fondre' },
+   241→    { emoji: '💫', text: 'Chaque moment avec toi est un trésor' },
+   242→    { emoji: '🤗', text: 'Tes câlins, mon refuge préféré' },
+   243→    { emoji: '💋', text: 'Tes baisers, ma drogue préférée' },
+   244→  ]
+   245→  return (
+   246→    <section id="raisons" className="relative py-20 md:py-28 px-6">
+   247→      <motion.div className="text-center mb-14">
+   248→        <motion.p className="tracking-[0.3em] uppercase mb-3" style={{ ...parisienne, color: 'rgba(255,150,165,0.5)', fontSize: '0.9rem' }}
+   249→          initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}>
+   250→          parce que tu mérites de savoir
+   251→        </motion.p>
+   252→        <motion.h2 className="text-3xl md:text-4xl lg:text-5xl font-normal" style={{ ...playfair, color: 'rgba(255,190,200,0.9)', letterSpacing: '0.04em', fontWeight: 400 }}
+   253→          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1.2 }}>
+   254→          Pourquoi Je T&apos;aime
+   255→        </motion.h2>
+   256→      </motion.div>
+   257→      <div className="max-w-2xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5">
+   258→        {reasons.map((reason, i) => (
+   259→          <motion.div key={i} className="relative px-5 py-4 md:px-6 md:py-5 rounded-xl"
+   260→            style={{ background: 'rgba(255,50,80,0.04)', border: '1px solid rgba(255,80,100,0.08)' }}
+   261→            initial={{ opacity: 0, y: 35, scale: 0.96 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: '-20px' }}
+   262→            transition={{ duration: 0.7, delay: i * 0.1 }}
+   263→            whileHover={{ scale: 1.02, borderColor: 'rgba(255,80,100,0.25)', background: 'rgba(255,50,80,0.08)' }}>
+   264→            <div className="flex items-start gap-3">
+   265→              <motion.span className="text-lg md:text-xl flex-shrink-0 mt-0.5"
+   266→                animate={{ scale: [1, 1.12, 1], rotate: [0, 4, -4, 0] }}
+   267→                transition={{ duration: 3.5, repeat: Infinity, delay: i * 0.5, ease: 'easeInOut' }}>
+   268→                {reason.emoji}
+   269→              </motion.span>
+   270→              <p className="text-sm md:text-[0.92rem] leading-relaxed" style={{ ...playfair, color: 'rgba(255,195,205,0.75)', letterSpacing: '0.01em' }}>
+   271→                {reason.text}
+   272→              </p>
+   273→            </div>
+   274→          </motion.div>
+   275→        ))}
+   276→      </div>
+   277→    </section>
+   278→  )
+   279→}
+   280→
+   281→// ─── TIMELINE SECTION ───
+   282→function TimelineSection() {
+   283→  const moments = [
+   284→    { title: 'Le jour où on s\'est rencontrés', text: 'Le jour où tout a commencé, où le monde a changé de couleur grâce à toi, Roxane.', icon: '💫' },
+   285→    { title: 'Notre premier baiser', text: 'Ce moment magique où le temps s\'est arrêté, où nos lèvres se sont trouvées.', icon: '💋' },
+   286→    { title: 'Notre première danse', text: 'Enveloppés l\'un dans l\'autre, le monde entier a disparu autour de nous.', icon: '🎵' },
+   287→    { title: 'Nos rires partagés', text: 'Ces éclats de rire qui résonnent encore dans ma mémoire, ma musique préférée.', icon: '😊' },
+   288→  ]
+   289→  return (
+   290→    <section id="moments" className="relative py-20 md:py-28 px-6">
+   291→      <motion.div className="text-center mb-16">
+   292→        <motion.p className="tracking-[0.3em] uppercase mb-3" style={{ ...parisienne, color: 'rgba(255,150,165,0.5)', fontSize: '0.9rem' }}
+   293→          initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}>
+   294→          gravés dans ma mémoire
+   295→        </motion.p>
+   296→        <motion.h2 className="text-3xl md:text-4xl lg:text-5xl font-normal" style={{ ...playfair, color: 'rgba(255,190,200,0.9)', letterSpacing: '0.04em', fontWeight: 400 }}
+   297→          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1.2 }}>
+   298→          Nos Plus Beaux Moments
+   299→        </motion.h2>
+   300→      </motion.div>
+   301→      <div className="max-w-md mx-auto relative">
+   302→        <motion.div className="absolute left-5 md:left-7 top-0 bottom-0 w-px"
+   303→          style={{ background: 'linear-gradient(to bottom, transparent, rgba(255,80,100,0.25), rgba(255,80,100,0.25), transparent)' }}
+   304→          initial={{ scaleY: 0 }} whileInView={{ scaleY: 1 }} viewport={{ once: true }} transition={{ duration: 2, ease: 'easeOut' }} />
+   305→        <div className="space-y-14">
+   306→          {moments.map((moment, i) => (
+   307→            <motion.div key={i} className="relative pl-14 md:pl-18"
+   308→              initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: '-40px' }}
+   309→              transition={{ duration: 0.8, delay: 0.15 }}>
+   310→              <motion.div className="absolute left-3 md:left-5 top-0.5 w-4 h-4 rounded-full flex items-center justify-center"
+   311→                style={{ background: 'rgba(255,50,80,0.15)', border: '1.5px solid rgba(255,80,100,0.4)' }}
+   312→                whileInView={{ scale: [0, 1.3, 1] }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.3 }}>
+   313→                <span className="text-[10px]">{moment.icon}</span>
+   314→              </motion.div>
+   315→              <h3 className="text-base md:text-lg mb-1.5" style={{ ...playfair, color: 'rgba(255,160,175,0.9)', fontWeight: 500, letterSpacing: '0.02em' }}>
+   316→                {moment.title}
+   317→              </h3>
+   318→              <p className="text-sm leading-relaxed" style={{ ...playfair, color: 'rgba(255,185,195,0.55)', letterSpacing: '0.01em' }}>
+   319→                {moment.text}
+   320→              </p>
+   321→            </motion.div>
+   322→          ))}
+   323→        </div>
+   324→      </div>
+   325→    </section>
+   326→  )
+   327→}
+   328→
+   329→// ─── FINAL SECTION ───
+   330→function FinalSection() {
+   331→  const ref = useRef(null)
+   332→  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
+   333→  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0])
+   334→  const scale = useTransform(scrollYProgress, [0, 0.4, 0.7, 1], [0.85, 1, 1, 0.92])
+   335→  const y = useTransform(scrollYProgress, [0, 0.5, 1], [50, 0, -25])
+   336→  return (
+   337→    <section ref={ref} className="relative min-h-screen flex items-center justify-center px-6 py-24 overflow-hidden">
+   338→      <motion.div className="absolute w-[500px] h-[500px] rounded-full pointer-events-none"
+   339→        style={{ background: 'radial-gradient(circle, rgba(255,40,70,0.12) 0%, transparent 70%)', filter: 'blur(40px)' }}
+   340→        animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.7, 0.4] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }} />
+   341→      <motion.div className="relative z-10 text-center max-w-xl mx-auto" style={{ opacity, scale, y }}>
+   342→        <motion.div className="text-5xl md:text-6xl mb-6"
+   343→          animate={{ scale: [1, 1.12, 1], filter: ['drop-shadow(0 0 15px rgba(255,60,90,0.3))', 'drop-shadow(0 0 35px rgba(255,60,90,0.7))', 'drop-shadow(0 0 15px rgba(255,60,90,0.3))'] }}
+   344→          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}>❤️</motion.div>
+   345→        <motion.h2 className="text-3xl md:text-4xl lg:text-5xl font-normal mb-2" style={{ ...playfair, color: 'rgba(255,200,210,0.95)', letterSpacing: '0.04em', fontWeight: 400, textShadow: '0 0 30px rgba(255,80,100,0.2)' }}
+   346→          initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1.2 }}>
+   347→          À Toi, Roxane
+   348→        </motion.h2>
+   349→        <motion.p className="text-xl md:text-2xl mb-8" style={{ ...parisienne, color: 'rgba(255,160,175,0.7)', letterSpacing: '0.08em' }}
+   350→          initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.3 }}>
+   351→          Pour Toujours
+   352→        </motion.p>
+   353→        <motion.div className="mx-auto mb-8" style={{ width: 60, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,100,120,0.4), transparent)' }}
+   354→          initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.5 }} />
+   355→        <motion.p className="text-sm md:text-base leading-relaxed mb-4" style={{ ...playfair, color: 'rgba(255,185,195,0.6)', letterSpacing: '0.03em' }}
+   356→          initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.7 }}>
+   357→          Ce cadeau n&apos;est qu&apos;une petite expression
+   358→        </motion.p>
+   359→        <motion.p className="text-sm md:text-base leading-relaxed mb-4" style={{ ...playfair, color: 'rgba(255,185,195,0.6)', letterSpacing: '0.03em' }}
+   360→          initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.9 }}>
+   361→          de tout ce que mon cœur ressent pour toi, Roxane.
+   362→        </motion.p>
+   363→        <motion.p className="text-base md:text-lg font-normal italic mt-6" style={{ ...parisienne, color: 'rgba(255,170,180,0.85)', textShadow: '0 0 15px rgba(255,80,100,0.15)', letterSpacing: '0.04em' }}
+   364→          initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, delay: 1.3 }}>
+   365→          Je t&apos;aime plus que tous les mots du monde.
+   366→        </motion.p>
+   367→      </motion.div>
+   368→    </section>
+   369→  )
+   370→}
+   371→
+   372→// ─── PETALS ───
+   373→function PetalsRain() {
+   374→  const petals = Array.from({ length: 12 }, (_, i) => ({ id: i, left: Math.random() * 100, delay: Math.random() * 20, duration: 12 + Math.random() * 15, size: 0.35 + Math.random() * 0.5, rotation: Math.random() * 360, drift: (Math.random() - 0.5) * 180 }))
+   375→  return (
+   376→    <div className="fixed inset-0 pointer-events-none z-[5] overflow-hidden">
+   377→      {petals.map(p => (
+   378→        <motion.div key={p.id} className="absolute" style={{ left: `${p.left}%`, top: '-5%', fontSize: `${p.size}rem` }}
+   379→          initial={{ y: 0, x: 0, rotate: 0, opacity: 0 }}
+   380→          animate={{ y: '110vh', x: [0, p.drift * 0.3, p.drift * 0.7, p.drift], rotate: [p.rotation, p.rotation + 180, p.rotation + 360], opacity: [0, 0.12, 0.12, 0] }}
+   381→          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'linear' }}>🌸</motion.div>
+   382→      ))}
+   383→    </div>
+   384→  )
+   385→}
+   386→
+   387→// ═══════════════════════════════════════
+   388→// ─── MAIN PAGE ───
+   389→// ═══════════════════════════════════════
+   390→export default function Home() {
+   391→  const heroRef = useRef(null)
+   392→  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+   393→  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
+   394→  const heroScale = useTransform(scrollYProgress, [0, 0.8], [1, 0.92])
+   395→  const heroY = useTransform(scrollYProgress, [0, 0.8], [0, -60])
+   396→
+   397→  return (
+   398→    <div className="relative" style={{ background: 'linear-gradient(180deg, #0d0508 0%, #140810 20%, #100610 50%, #0a0818 80%, #0d0508 100%)' }}>
+   399→      <FloatingHearts />
+   400→      <PetalsRain />
+   401→
+   402→      {/* ═══ HERO ═══ */}
+   403→      <motion.section ref={heroRef} className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
+   404→        style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}>
+   405→        <div className="absolute inset-0 pointer-events-none">
+   406→          {[...Array(15)].map((_, i) => (
+   407→            <motion.div key={`hp-${i}`} className="absolute rounded-full"
+   408→              style={{ width: 1.5 + Math.random() * 3, height: 1.5 + Math.random() * 3, left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`, background: `rgba(255, ${80 + Math.random() * 80}, ${100 + Math.random() * 60}, ${0.08 + Math.random() * 0.15})` }}
+   409→              animate={{ y: [-15, 15, -15], x: [-8, 8, -8], opacity: [0.08, 0.25, 0.08] }}
+   410→              transition={{ duration: 5 + Math.random() * 5, repeat: Infinity, ease: 'easeInOut', delay: Math.random() * 3 }} />
+   411→          ))}
+   412→        </div>
+   413→
+   414→        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: 'easeOut' }} className="relative z-10">
+   415→          <HeartWords />
+   416→        </motion.div>
+   417→
+   418→        <motion.div className="text-center max-w-lg relative z-10 mt-3" initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, delay: 3.5, ease: 'easeOut' }}>
+   419→          <motion.p className="text-2xl md:text-3xl lg:text-4xl font-normal tracking-wide" style={{ ...playfair, color: 'rgba(255, 200, 210, 0.95)', letterSpacing: '0.06em', fontWeight: 400 }}
+   420→            animate={{ textShadow: ['0 0 25px rgba(255, 80, 100, 0.25)', '0 0 45px rgba(255, 80, 100, 0.5)', '0 0 25px rgba(255, 80, 100, 0.25)'] }}
+   421→            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
+   422→            Roxane, Tu Es Mon Seul Amour
+   423→          </motion.p>
+   424→          <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1, delay: 4.2, ease: 'easeOut' }}
+   425→            className="mt-3 mx-auto" style={{ width: 50, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255, 100, 120, 0.5), transparent)' }} />
+   426→          <motion.p className="mt-3 text-sm" style={{ ...parisienne, color: 'rgba(255, 170, 185, 0.5)', letterSpacing: '0.1em', fontSize: '1rem' }}
+   427→            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 4.8 }}>
+   428→            pour toujours et à jamais...
+   429→          </motion.p>
+   430→        </motion.div>
+   431→
+   432→        <ScrollIndicator />
+   433→        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, transparent 35%, rgba(10, 5, 8, 0.75) 100%)' }} />
+   434→      </motion.section>
+   435→
+   436→      {/* ═══ GALLERY ═══ */}
+   437→      <Divider />
+   438→      <PolaroidGallery />
+   439→      <Divider />
+   440→
+   441→      {/* ═══ POEM ═══ */}
+   442→      <PoemSection />
+   443→      <Divider />
+   444→
+   445→      {/* ═══ REASONS ═══ */}
+   446→      <ReasonsSection />
+   447→      <Divider />
+   448→
+   449→      {/* ═══ TIMELINE ═══ */}
+   450→      <TimelineSection />
+   451→      <Divider />
+   452→
+   453→      {/* ═══ FINAL ═══ */}
+   454→      <FinalSection />
+   455→
+   456→      <div className="h-24 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, #0d0508)' }} />
+   457→    </div>
+   458→  )
+   459→}
