@@ -50,5 +50,23 @@ test
 prompt
 
 server.log
+/.next/
 # Skills directory
 /skills/
+
+# Internal files
+worklog.md
+.zscripts/
+
+# Screenshots & test images
+/download/*.png
+/download/*.jpg
+/download/*.jpeg
+/download/*.webp
+
+# Database
+/db/
+/prisma/
+
+# Mini services
+/mini-services/
