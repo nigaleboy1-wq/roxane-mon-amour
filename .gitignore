@@ -68,5 +68,8 @@ worklog.md
 /db/
 /prisma/
 
+# Uploads (source images)
+/upload/
+
 # Mini services
 /mini-services/
