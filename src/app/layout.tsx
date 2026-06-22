@@ -1,23 +1,27 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Parisienne } from "next/font/google";
+import { Cormorant_Garamond, Great_Vibes } from "next/font/google";
 import "./globals.css";
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
+// Display: Cormorant Garamond — distinctive high-contrast serif with French literary character
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
   display: 'swap',
 });
 
-const parisienne = Parisienne({
-  variable: "--font-parisienne",
+// Script accent: Great Vibes — romantic, handwritten warmth
+const greatVibes = Great_Vibes({
+  variable: "--font-great-vibes",
   subsets: ["latin"],
-  weight: '400',
+  weight: "400",
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: "Pour Toi, Roxane",
-  description: "Un cadeau du coeur, fait avec amour.",
+  description: "Un cadeau du cœur, fait avec amour.",
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💖</text></svg>",
   },
@@ -31,11 +35,13 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${playfair.variable} ${parisienne.variable} antialiased`}
+        className={`${cormorant.variable} ${greatVibes.variable} antialiased`}
         style={{
-          background: '#0d0508',
-          color: 'rgba(255, 200, 210, 0.9)',
+          background: 'var(--surface)',
+          color: 'var(--rose-ink)',
           overflowX: 'hidden',
+          WebkitFontSmoothing: 'antialiased',
+          MozOsxFontSmoothing: 'grayscale',
         }}
       >
         {children}
