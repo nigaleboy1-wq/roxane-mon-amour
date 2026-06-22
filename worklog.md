@@ -18,3 +18,27 @@ Stage Summary:
 - Fichier créé: /home/z/my-project/src/components/HeartWords.tsx
 - Fichier modifié: /home/z/my-project/src/app/page.tsx
 - 100 mots forment le cœur avec animations progressives + effet vivant
+
+---
+Task ID: 2
+Agent: main
+Task: Créer un site-cadeau romantique complet pour la copine
+
+Work Log:
+- Étendu la page en un site scroll complet avec 5 sections
+- Hero Section: cœur animé + phrase "Tu es mon seul et unique amour" + parallaxe au scroll
+- Poem Section: poème d'amour français avec lignes apparaissant une par une (blur + slide) au scroll
+- Reasons Section: "Pourquoi Je T'aime" - 8 cartes avec emojis animés et hover effects
+- Timeline Section: "Nos Plus Beaux Moments" - timeline verticale avec 4 moments clés
+- Final Section: "A Toi, Pour Toujours" - message final avec gros cœur pulsant et parallaxe
+- Background persistant: 25 cœurs flottants + 15 pétales de cerisier qui tombent
+- Dividers animés entre chaque section
+- Layout.tsx mis à jour (titre "Pour Toi, Mon Amour", langue fr)
+- Scroll indicator animé en bas du hero
+- Vérifié desktop et mobile (iPhone 14) - responsive
+- 0 erreurs console, lint clean
+
+Stage Summary:
+- Fichiers modifiés: page.tsx (complet rewrite), layout.tsx (métadonnées)
+- Site complet avec 5 sections animées scroll-based
+- Background ambient avec cœurs et pétales
