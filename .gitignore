@@ -72,4 +72,4 @@ worklog.md
 /upload/
 
 # Mini services
-/mini-services/
+/mini-services//search*.json
