@@ -32,6 +32,140 @@ const c = {
 }
 
 // ═══════════════════════════════════════════════════════
+// ─── FINGERPRINT INTRO (inspired by video) ───
+// ═══════════════════════════════════════════════════════
+function FingerprintIntro({ onUnlock }: { onUnlock: () => void }) {
+  const [progress, setProgress] = useState(0)
+  const [isHolding, setIsHolding] = useState(false)
+  const [unlocked, setUnlocked] = useState(false)
+  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const startHold = useCallback(() => {
+    setIsHolding(true)
+    holdTimer.current = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          if (holdTimer.current) clearInterval(holdTimer.current)
+          setUnlocked(true)
+          setTimeout(onUnlock, 600)
+          return 100
+        }
+        return prev + 2.5
+      })
+    }, 30)
+  }, [onUnlock])
+
+  const endHold = useCallback(() => {
+    setIsHolding(false)
+    if (holdTimer.current) {
+      clearInterval(holdTimer.current)
+      holdTimer.current = null
+    }
+    // Slowly reset
+    setProgress(prev => {
+      if (prev < 10) return 0
+      return prev
+    })
+    const decay = setInterval(() => {
+      setProgress(p => {
+        if (p <= 0) { clearInterval(decay); return 0 }
+        return p - 1.5
+      })
+    }, 30)
+  }, [])
+
+  useEffect(() => {
+    return () => { if (holdTimer.current) clearInterval(holdTimer.current) }
+  }, [])
+
+  return (
+    <AnimatePresence>
+      {!unlocked && (
+        <motion.div
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center"
+          style={{ background: 'linear-gradient(180deg, #0b0407 0%, #140810 50%, #0b0407 100%)' }}
+          exit={{ opacity: 0, scale: 1.05 }}
+          transition={{ duration: 0.8, ease: easeOutExpo }}
+        >
+          {/* Fingerprint SVG */}
+          <motion.p
+            className="mb-6"
+            style={{ ...script, color: c.ink, fontSize: 'clamp(1.8rem, 4vw, 2.5rem)' }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.3, ease: easeOut }}
+          >
+            Pour Toi, Roxane
+          </motion.p>
+
+          <motion.div
+            className="relative cursor-pointer select-none"
+            onMouseDown={startHold}
+            onMouseUp={endHold}
+            onMouseLeave={endHold}
+            onTouchStart={startHold}
+            onTouchEnd={endHold}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: easeOutExpo }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {/* Progress ring */}
+            <svg width="120" height="120" viewBox="0 0 120 120" className="transform -rotate-90">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,80,100,0.08)" strokeWidth="2" />
+              <motion.circle
+                cx="60" cy="60" r="52"
+                fill="none"
+                stroke="oklch(0.65 0.20 10)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 52}`}
+                strokeDashoffset={`${2 * Math.PI * 52 * (1 - progress / 100)}`}
+                style={{ transition: 'stroke-dashoffset 0.1s linear' }}
+              />
+            </svg>
+            {/* Fingerprint icon */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div
+                animate={isHolding ? { scale: [1, 1.08, 1], opacity: [0.6, 1, 0.6] } : { scale: 1, opacity: 0.5 }}
+                transition={{ duration: 1.5, repeat: isHolding ? Infinity : 0, ease: easeSmooth as unknown as number[] }}
+                style={{ filter: isHolding ? 'drop-shadow(0 0 20px rgba(255,80,100,0.4))' : 'none' }}
+              >
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="oklch(0.65 0.15 350)" strokeWidth="1.2" strokeLinecap="round">
+                  <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4" />
+                  <path d="M5 19.5C5.5 18 6 15 6 12c0-3.5 2.5-6 6-6s6 2.5 6 6c0 2.5-.5 4.5-1 6" />
+                  <path d="M8 17c.5-1.5 1-3 1-5 0-2 1.5-3.5 3-3.5s3 1.5 3 3.5c0 1.5-.3 3-1 5" />
+                  <path d="M11 15.5c.3-.8.5-1.5.5-2.5 0-1 .7-1.5 1.5-1.5s1.5.5 1.5 1.5" />
+                </svg>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          <motion.p
+            className="mt-6 text-center"
+            style={{ ...display, color: c.inkFaint, fontSize: '0.85rem', letterSpacing: '0.05em', fontWeight: 300 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 1.2 }}
+          >
+            Maintiens pressé pour entrer
+          </motion.p>
+          <motion.p
+            className="mt-2 text-center"
+            style={{ ...display, color: 'rgba(255,80,100,0.3)', fontSize: '0.75rem', fontWeight: 300 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 1.5 }}
+          >
+            {Math.round(progress)}%
+          </motion.p>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
 // ─── #1 HEART PROGRESS BAR ───
 // ═══════════════════════════════════════════════════════
 function HeartProgressBar() {
@@ -925,7 +1059,195 @@ function TimelineSection() {
 }
 
 // ═══════════════════════════════════════════════════════
-// ─── #10 FINAL SECTION (typewriter) ───
+// ─── NOTRE CHANSON (visible audio player section) ───
+// ═══════════════════════════════════════════════════════
+function SongSection() {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    const update = () => {
+      if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100)
+    }
+    audio.addEventListener('timeupdate', update)
+    audio.addEventListener('ended', () => setIsPlaying(false))
+    return () => { audio.removeEventListener('timeupdate', update) }
+  }, [])
+
+  const toggle = () => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (isPlaying) { audio.pause() } else { audio.play().catch(() => {}) }
+    setIsPlaying(!isPlaying)
+  }
+
+  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current
+    if (!audio || !audio.duration) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const pct = (e.clientX - rect.left) / rect.width
+    audio.currentTime = pct * audio.duration
+  }
+
+  return (
+    <section className="relative px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+      <SectionHeading eyebrow="notre mélodie" title="Notre Chanson" />
+      <div className="max-w-sm mx-auto">
+        <audio ref={audioRef} src="/music/romance.mp3" preload="metadata" />
+        {/* Vinyl disc animation */}
+        <div className="flex justify-center mb-8">
+          <motion.div
+            className="relative w-40 h-40 md:w-48 md:h-48 rounded-full"
+            style={{
+              background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, rgba(255,80,100,0.05) 30%, rgba(20,10,15,0.8) 31%, rgba(20,10,15,0.9) 100%)',
+              border: '1px solid rgba(255,80,100,0.08)',
+              boxShadow: '0 0 40px rgba(255,60,90,0.05), inset 0 0 30px rgba(0,0,0,0.3)',
+            }}
+            animate={isPlaying ? { rotate: 360 } : {}}
+            transition={isPlaying ? { duration: 4, repeat: Infinity, ease: 'linear' as const } : {}}
+          >
+            {/* Center label */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div
+                className="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center"
+                style={{ background: 'radial-gradient(circle, rgba(255,80,100,0.1), rgba(20,10,15,0.9))', border: '1px solid rgba(255,80,100,0.1)' }}
+              >
+                <motion.div
+                  animate={isPlaying ? { scale: [1, 1.15, 1], opacity: [0.5, 0.9, 0.5] } : { opacity: 0.4 }}
+                  transition={{ duration: 1.5, repeat: isPlaying ? Infinity : 0, ease: easeSmooth as unknown as number[] }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.65 0.15 350)" strokeWidth="1.5">
+                    <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+                  </svg>
+                </motion.div>
+              </div>
+            </div>
+            {/* Grooves */}
+            {[0.35, 0.5, 0.65, 0.8].map((r, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  inset: `${r * 50}%`,
+                  border: '0.5px solid rgba(255,255,255,0.02)',
+                }}
+              />
+            ))}
+          </motion.div>
+        </div>
+        {/* Controls */}
+        <div className="flex items-center justify-center gap-6 mb-5">
+          <motion.button
+            className="w-12 h-12 rounded-full flex items-center justify-center"
+            style={{ background: isPlaying ? 'rgba(255,80,100,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${isPlaying ? 'rgba(255,80,100,0.2)' : 'rgba(255,255,255,0.06)'}` }}
+            onClick={toggle}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {isPlaying ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.accent as string} strokeWidth="1.5">
+                <rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill={c.inkDim as string}>
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </motion.button>
+        </div>
+        {/* Progress bar */}
+        <div
+          className="w-full h-1 rounded-full cursor-pointer relative group"
+          style={{ background: 'rgba(255,80,100,0.08)' }}
+          onClick={seek}
+        >
+          <div
+            className="h-full rounded-full transition-[width] duration-200"
+            style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${c.accentSoft}, ${c.accent})` }}
+          />
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ left: `${progress}%`, transform: `translateX(-50%) translateY(-50%)`, background: c.accent, boxShadow: '0 0 8px rgba(255,60,90,0.4)' }}
+          />
+        </div>
+        <motion.p
+          className="text-center mt-6"
+          style={{ ...script, color: c.inkFaint, fontSize: '1rem' }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, delay: 0.3 }}
+        >
+          La chanson de notre histoire d&apos;amour
+        </motion.p>
+      </div>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── CONFETTI FINAL (inspired by video) ───
+// ═══════════════════════════════════════════════════════
+function Confetti() {
+  const pieces = useRef(
+    Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 8,
+      duration: 4 + Math.random() * 5,
+      size: 4 + Math.random() * 6,
+      rotation: Math.random() * 360,
+      color: [
+        'oklch(0.65 0.22 12)',
+        'oklch(0.70 0.18 45)',
+        'oklch(0.60 0.20 350)',
+        'oklch(0.75 0.15 30)',
+        'oklch(0.55 0.15 10)',
+      ][Math.floor(Math.random() * 5)],
+      wobble: (Math.random() - 0.5) * 100,
+      shape: Math.random() > 0.5 ? 'rect' : 'circle',
+    }))
+  ).current
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {pieces.map(p => (
+        <motion.div
+          key={p.id}
+          className="absolute"
+          style={{
+            left: `${p.left}%`,
+            top: '-5%',
+            width: p.size,
+            height: p.shape === 'rect' ? p.size * 0.6 : p.size,
+            borderRadius: p.shape === 'rect' ? '1px' : '50%',
+            background: p.color,
+            rotate: p.rotation,
+          }}
+          initial={{ y: 0, x: 0, rotate: 0, opacity: 0 }}
+          animate={{
+            y: '110vh',
+            x: [0, p.wobble * 0.3, p.wobble * 0.7, p.wobble],
+            rotate: [p.rotation, p.rotation + 180, p.rotation + 360],
+            opacity: [0, 0.7, 0.7, 0],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            repeat: Infinity,
+            ease: 'linear' as const,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── FINAL SECTION (multi-style text like video) ───
 // ═══════════════════════════════════════════════════════
 function FinalSection() {
   const ref = useRef(null)
@@ -963,78 +1285,96 @@ function FinalSection() {
 
   return (
     <section ref={ref} className="relative flex items-center justify-center px-6 py-24 overflow-hidden" style={{ minHeight: '100vh' }}>
+      <Confetti />
       <motion.div
         className="absolute w-[400px] h-[400px] md:w-[500px] md:h-[500px] rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(255,40,70,0.1) 0%, transparent 70%)', filter: 'blur(50px)' }}
+        style={{ background: 'radial-gradient(circle, rgba(255,40,70,0.12) 0%, transparent 70%)', filter: 'blur(50px)' }}
         animate={{ scale: [1, 1.06, 1], opacity: [0.4, 0.65, 0.4] }}
         transition={{ duration: 5, repeat: Infinity, ease: easeSmooth as unknown as number[] }}
       />
       <motion.div className="relative z-10 text-center max-w-lg mx-auto" style={{ opacity, scale, y }}>
-        <motion.div
-          className="text-5xl md:text-6xl mb-6"
-          animate={{
-            scale: [1, 1.08, 1],
-            filter: ['drop-shadow(0 0 12px rgba(255,60,90,0.2))', 'drop-shadow(0 0 30px rgba(255,60,90,0.5))', 'drop-shadow(0 0 12px rgba(255,60,90,0.2))'],
+        {/* Gold small text — like video "Y AL FINAL SOLO QUEDA ESTO" */}
+        <motion.p
+          style={{
+            ...display,
+            color: 'oklch(0.75 0.15 85)',
+            fontSize: 'clamp(0.8rem, 1.2vw, 0.95rem)',
+            letterSpacing: '0.2em',
+            fontWeight: 500,
+            textTransform: 'uppercase',
           }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: easeSmooth as unknown as number[] }}
-        >
-          ❤️
-        </motion.div>
-        <motion.h2
-          className="font-light mb-2"
-          style={{ ...display, color: c.ink, fontSize: 'var(--text-h2)', letterSpacing: '0.03em', fontWeight: 300, lineHeight: 1.2, textShadow: '0 0 25px rgba(255,80,100,0.15)' }}
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1, ease: easeOutExpo }}
         >
-          À Toi, Roxane
+          Et à la fin, il ne reste que ça
+        </motion.p>
+
+        {/* Big red cursive — like video "Te amo, Mi amor." */}
+        <motion.h2
+          className="mt-4"
+          style={{
+            ...script,
+            color: 'oklch(0.65 0.25 12)',
+            fontSize: 'clamp(2.2rem, 5vw, 3.5rem)',
+            letterSpacing: '0.03em',
+            lineHeight: 1.2,
+            textShadow: '0 0 30px rgba(255,60,90,0.2)',
+          }}
+          initial={{ opacity: 0, y: 25, scale: 0.95 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, delay: 0.2, ease: easeOutExpo }}
+        >
+          Je t&apos;aime, Roxane.
         </motion.h2>
+
+        {/* White smaller text — like video */}
         <motion.p
-          className="mb-8"
-          style={{ ...script, color: c.accentSoft, fontSize: 'clamp(1.3rem, 2vw, 1.7rem)', letterSpacing: '0.06em' }}
-          initial={{ opacity: 0, y: 12 }}
+          className="mt-6 leading-relaxed"
+          style={{
+            ...display,
+            color: c.inkDim,
+            fontSize: 'var(--text-body)',
+            fontWeight: 300,
+            letterSpacing: '0.02em',
+            maxWidth: '50ch',
+            margin: '1.5rem auto 0',
+          }}
+          initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2, ease: easeOut }}
+          transition={{ duration: 1, delay: 0.5, ease: easeOut }}
         >
-          Pour Toujours
+          Aujourd&apos;hui, demain, et tous les beaux mois qu&apos;il nous reste encore.
         </motion.p>
-        <motion.div
-          className="mx-auto mb-8"
-          style={{ width: 50, height: 1, background: `linear-gradient(90deg, transparent, ${c.line}, transparent)` }}
-          initial={{ scaleX: 0 }}
-          whileInView={{ scaleX: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.4, ease: easeOut }}
-        />
+
+        {/* Gold signature — like video "Con todo mi amor ♡" */}
         <motion.p
-          className="leading-relaxed mb-3"
-          style={{ ...display, color: c.inkFaint, fontSize: 'var(--text-body)', fontWeight: 300, letterSpacing: '0.02em', maxWidth: '55ch', margin: '0 auto 0.75rem' }}
-          initial={{ opacity: 0, y: 12 }}
+          className="mt-8"
+          style={{
+            ...script,
+            color: 'oklch(0.75 0.15 85)',
+            fontSize: 'clamp(1.1rem, 2vw, 1.4rem)',
+            letterSpacing: '0.04em',
+          }}
+          initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.55, ease: easeOut }}
+          transition={{ duration: 1, delay: 0.8, ease: easeOut }}
         >
-          Ce cadeau n&apos;est qu&apos;une petite expression
+          Avec tout mon amour ♡
         </motion.p>
-        <motion.p
-          className="leading-relaxed mb-6"
-          style={{ ...display, color: c.inkFaint, fontSize: 'var(--text-body)', fontWeight: 300, letterSpacing: '0.02em', maxWidth: '55ch', margin: '0 auto 1.5rem' }}
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.7, ease: easeOut }}
-        >
-          de tout ce que mon cœur ressent pour toi, Roxane.
-        </motion.p>
-        <div ref={sectionRef}>
+
+        {/* Typewriter line */}
+        <div ref={sectionRef} className="mt-8">
           <p
-            className="italic mt-6"
+            className="italic"
             style={{
               ...script,
               color: c.ink,
-              fontSize: 'clamp(1.1rem, 1.8vw, 1.35rem)',
+              fontSize: 'clamp(0.95rem, 1.5vw, 1.15rem)',
               letterSpacing: '0.03em',
               textShadow: '0 0 12px rgba(255,80,100,0.1)',
               minHeight: '2em',
@@ -1060,6 +1400,7 @@ function FinalSection() {
 // ═══════════════════════════════════════════════════════
 export default function Home() {
   const heroRef = useRef(null)
+  const [isUnlocked, setIsUnlocked] = useState(false)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
   const heroScale = useTransform(scrollYProgress, [0, 0.8], [1, 0.94])
@@ -1067,22 +1408,27 @@ export default function Home() {
 
   return (
     <div className="relative" style={{ background: 'linear-gradient(180deg, #0b0407 0%, #110810 25%, #0e0610 50%, #0a0818 75%, #0b0407 100%)' }}>
-      {/* Fixed layers */}
-      <StarField />
-      <FloatingHearts />
-      <PetalsRain />
-      <HeartProgressBar />
-      <ClickSparkles />
-      <CursorHeartTrail />
-      <DoubleTapHeart />
-      <MusicPlayer />
+      {/* Fingerprint intro gate */}
+      <FingerprintIntro onUnlock={() => setIsUnlocked(true)} />
 
-      {/* ═══ HERO ═══ */}
-      <motion.section
-        ref={heroRef}
-        className="relative flex flex-col items-center justify-center overflow-hidden"
-        style={{ minHeight: '100vh', opacity: heroOpacity, scale: heroScale, y: heroY }}
-      >
+      {isUnlocked && (
+        <>
+          {/* Fixed layers */}
+          <StarField />
+          <FloatingHearts />
+          <PetalsRain />
+          <HeartProgressBar />
+          <ClickSparkles />
+          <CursorHeartTrail />
+          <DoubleTapHeart />
+          <MusicPlayer />
+
+          {/* ═══ HERO ═══ */}
+          <motion.section
+            ref={heroRef}
+            className="relative flex flex-col items-center justify-center overflow-hidden"
+            style={{ minHeight: '100vh', opacity: heroOpacity, scale: heroScale, y: heroY }}
+          >
         <div className="absolute inset-0 pointer-events-none">
           {[...Array(6)].map((_, i) => (
             <motion.div
@@ -1170,9 +1516,14 @@ export default function Home() {
       <TimelineSection />
       <WaveTransition flip />
 
+      <SongSection />
+      <WaveTransition />
+
       <FinalSection />
 
       <div className="h-20 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, var(--surface))' }} />
+        </>
+      )}
     </div>
   )
 }
