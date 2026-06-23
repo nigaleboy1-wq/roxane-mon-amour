@@ -181,3 +181,21 @@ html {
   background: rgba(255, 80, 100, 0.3);
   color: #fff;
 }
+
+/* ═══ Ken Burns keyframes ═══ */
+@keyframes kenBurns0 {
+  from { transform: scale(1) translateX(0); }
+  to   { transform: scale(1.12) translateX(3%); }
+}
+@keyframes kenBurns1 {
+  from { transform: scale(1.08) translateX(-2%); }
+  to   { transform: scale(1) translateX(0); }
+}
+@keyframes kenBurns2 {
+  from { transform: scale(1) translateX(0); }
+  to   { transform: scale(1.1) translateX(-2%); }
+}
+@keyframes kenBurns3 {
+  from { transform: scale(1.06) translateX(2%); }
+  to   { transform: scale(1) translateX(0); }
+}
