@@ -1399,12 +1399,11 @@ function FinalSection() {
 // ─── MAIN PAGE ───
 // ═══════════════════════════════════════════════════════
 export default function Home() {
-  const heroRef = useRef(null)
   const [isUnlocked, setIsUnlocked] = useState(false)
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
-  const heroScale = useTransform(scrollYProgress, [0, 0.8], [1, 0.94])
-  const heroY = useTransform(scrollYProgress, [0, 0.8], [0, -40])
+  const { scrollYProgress } = useScroll()
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0])
+  const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.94])
+  const heroY = useTransform(scrollYProgress, [0, 0.15], [0, -40])
 
   return (
     <div className="relative" style={{ background: 'linear-gradient(180deg, #0b0407 0%, #110810 25%, #0e0610 50%, #0a0818 75%, #0b0407 100%)' }}>
@@ -1425,7 +1424,6 @@ export default function Home() {
 
           {/* ═══ HERO ═══ */}
           <motion.section
-            ref={heroRef}
             className="relative flex flex-col items-center justify-center overflow-hidden"
             style={{ minHeight: '100vh', opacity: heroOpacity, scale: heroScale, y: heroY }}
           >
