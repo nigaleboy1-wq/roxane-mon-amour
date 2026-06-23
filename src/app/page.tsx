@@ -1,76 +1,371 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion'
+import { useRef, useState, useEffect, useCallback } from 'react'
+import { motion, useScroll, useTransform, useInView, AnimatePresence, useMotionValue, useSpring } from 'framer-motion'
 import HeartWords from '@/components/HeartWords'
 import Image from 'next/image'
+
+// ═══════════════════════════════════════════════════════
+// ─── CONSTANTS ───
+// ═══════════════════════════════════════════════════════
+
+// ⬇️ Change cette date pour ton anniversaire de couple ⬇️
+const COUPLE_START_DATE = new Date('2024-01-15')
 
 // ─── Font aliases ───
 const display = { fontFamily: "var(--font-cormorant), 'Cormorant Garamond', 'Georgia', serif" }
 const script = { fontFamily: "var(--font-great-vibes), 'Great Vibes', cursive" }
 
-// ─── Shared easing (impeccable: ease-out quint/expo) ───
+// ─── Shared easing ───
 const easeOut = [0.22, 1, 0.36, 1] as const
 const easeOutExpo = [0.16, 1, 0.3, 1] as const
 const easeSmooth = [0.45, 0, 0.55, 1] as const
 
 // ─── Color tokens ───
-const colors = {
+const c = {
   ink: 'oklch(0.82 0.06 350)',
   inkDim: 'oklch(0.68 0.08 350)',
   inkFaint: 'oklch(0.55 0.06 350)',
   accent: 'oklch(0.65 0.20 10)',
   accentSoft: 'oklch(0.60 0.12 350)',
-  glow: 'rgba(255, 60, 90, 0.15)',
-  surface: '#0b0407',
-  surfaceUp: '#140a0e',
   line: 'rgba(255, 80, 100, 0.2)',
 }
 
-// ─── Ambient particles — fewer, subtler (impeccable: less can be more) ───
-function AmbientParticles() {
+// ═══════════════════════════════════════════════════════
+// ─── #1 HEART PROGRESS BAR ───
+// ═══════════════════════════════════════════════════════
+function HeartProgressBar() {
+  const { scrollYProgress } = useScroll()
+  const pathLength = useTransform(scrollYProgress, [0, 0.95], [0, 1])
+  const opacity = useTransform(scrollYProgress, [0, 0.02, 0.9, 1], [0, 1, 1, 0])
+
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {[...Array(8)].map((_, i) => (
-        <motion.div
-          key={`p-${i}`}
-          className="absolute rounded-full"
-          style={{
-            width: 1 + Math.random() * 2,
-            height: 1 + Math.random() * 2,
-            left: `${10 + Math.random() * 80}%`,
-            top: `${10 + Math.random() * 80}%`,
-            background: `rgba(255, ${90 + Math.random() * 60}, ${110 + Math.random() * 50}, 0.12)`,
-          }}
-          animate={{
-            y: [-20, 20, -20],
-            x: [-10, 10, -10],
-            opacity: [0.06, 0.2, 0.06],
-          }}
-          transition={{
-            duration: 6 + Math.random() * 6,
-            repeat: Infinity,
-            ease: 'easeInOut' as const,
-            delay: Math.random() * 4,
-          }}
+    <motion.div
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-50"
+      style={{ opacity }}
+    >
+      <svg width="28" height="26" viewBox="0 0 28 26" fill="none">
+        <path
+          d="M14 26s-13-8.4-13-17a7.3 7.3 0 0 1 13-4.6A7.3 7.3 0 0 1 27 9c0 8.6-13 17-13 17z"
+          stroke="rgba(255,80,100,0.15)"
+          strokeWidth="1.5"
         />
-      ))}
+        <motion.path
+          d="M14 26s-13-8.4-13-17a7.3 7.3 0 0 1 13-4.6A7.3 7.3 0 0 1 27 9c0 8.6-13 17-13 17z"
+          stroke="oklch(0.65 0.20 10)"
+          strokeWidth="1.5"
+          style={{ pathLength }}
+          fill="none"
+        />
+      </svg>
+    </motion.div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── #2 CLICK SPARKLES ───
+// ═══════════════════════════════════════════════════════
+function ClickSparkles() {
+  const [sparkles, setSparkles] = useState<{ id: number; x: number; y: number }[]>([])
+
+  useEffect(() => {
+    let nextId = 0
+    const handler = (e: MouseEvent) => {
+      const id = nextId++
+      const newSparkles = Array.from({ length: 6 }, (_, i) => ({
+        id: id * 100 + i,
+        x: e.clientX + (Math.random() - 0.5) * 40,
+        y: e.clientY + (Math.random() - 0.5) * 40,
+      }))
+      setSparkles(prev => [...prev, ...newSparkles])
+      setTimeout(() => {
+        setSparkles(prev => prev.filter(s => !newSparkles.find(ns => ns.id === s.id)))
+      }, 800)
+    }
+    window.addEventListener('click', handler)
+    return () => window.removeEventListener('click', handler)
+  }, [])
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[60]">
+      <AnimatePresence>
+        {sparkles.map(s => (
+          <motion.div
+            key={s.id}
+            className="absolute rounded-full"
+            style={{
+              left: s.x,
+              top: s.y,
+              width: 3 + Math.random() * 3,
+              height: 3 + Math.random() * 3,
+              background: `oklch(0.75 ${0.15 + Math.random() * 0.1} ${350 + Math.random() * 20})`,
+            }}
+            initial={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+            animate={{ opacity: 0, scale: 0, x: (Math.random() - 0.5) * 30, y: (Math.random() - 0.5) * 30 - 15 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.7, ease: easeOut }}
+          />
+        ))}
+      </AnimatePresence>
     </div>
   )
 }
 
+// ═══════════════════════════════════════════════════════
+// ─── #4 INTERACTIVE STARFIELD ───
+// ═══════════════════════════════════════════════════════
+function StarField() {
+  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 })
+  const stars = useRef(
+    Array.from({ length: 60 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 0.8 + Math.random() * 1.5,
+      baseOpacity: 0.15 + Math.random() * 0.3,
+      twinkleSpeed: 3 + Math.random() * 4,
+      twinkleDelay: Math.random() * 5,
+    }))
+  ).current
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY })
+    window.addEventListener('mousemove', handler)
+    return () => window.removeEventListener('mousemove', handler)
+  }, [])
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      {stars.map(star => {
+        const starPixelX = (star.x / 100) * (typeof window !== 'undefined' ? window.innerWidth : 1000)
+        const starPixelY = (star.y / 100) * (typeof window !== 'undefined' ? window.innerHeight : 1000)
+        const dist = Math.sqrt((mousePos.x - starPixelX) ** 2 + (mousePos.y - starPixelY) ** 2)
+        const proximity = Math.max(0, 1 - dist / 150)
+        const extraOpacity = proximity * 0.5
+        const extraSize = proximity * 2
+        return (
+          <motion.div
+            key={star.id}
+            className="absolute rounded-full"
+            style={{
+              left: `${star.x}%`,
+              top: `${star.y}%`,
+              width: star.size + extraSize,
+              height: star.size + extraSize,
+              background: `rgba(255, ${180 + proximity * 75}, ${200 + proximity * 55}, ${star.baseOpacity + extraOpacity})`,
+            }}
+            animate={{
+              opacity: [star.baseOpacity + extraOpacity, star.baseOpacity + extraOpacity + 0.15, star.baseOpacity + extraOpacity],
+            }}
+            transition={{
+              duration: star.twinkleSpeed,
+              repeat: Infinity,
+              ease: easeSmooth as unknown as number[],
+              delay: star.twinkleDelay,
+            }}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── #6 CURSOR HEART TRAIL ───
+// ═══════════════════════════════════════════════════════
+function CursorHeartTrail() {
+  const [trails, setTrails] = useState<{ id: number; x: number; y: number }[]>([])
+
+  useEffect(() => {
+    let nextId = 0
+    let lastSpawn = 0
+    const handler = (e: MouseEvent) => {
+      const now = Date.now()
+      if (now - lastSpawn < 80) return
+      lastSpawn = now
+      const id = nextId++
+      setTrails(prev => [...prev.slice(-12), { id, x: e.clientX, y: e.clientY }])
+      setTimeout(() => setTrails(prev => prev.filter(t => t.id !== id)), 1200)
+    }
+    window.addEventListener('mousemove', handler)
+    return () => window.removeEventListener('mousemove', handler)
+  }, [])
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[55]">
+      <AnimatePresence>
+        {trails.map(t => (
+          <motion.span
+            key={t.id}
+            className="absolute"
+            style={{ left: t.x, top: t.y, fontSize: '0.7rem', color: 'rgba(255,120,140,0.4)' }}
+            initial={{ opacity: 0.6, scale: 0.5, y: 0 }}
+            animate={{ opacity: 0, scale: 1.2, y: -30 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: easeOut }}
+          >
+            ♥
+          </motion.span>
+        ))}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── #8 MUSIC PLAYER ───
+// ═══════════════════════════════════════════════════════
+function MusicPlayer() {
+  const [isPlaying, setIsPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  const toggle = useCallback(() => {
+    if (!audioRef.current) return
+    if (isPlaying) {
+      audioRef.current.pause()
+    } else {
+      audioRef.current.play().catch(() => {})
+    }
+    setIsPlaying(!isPlaying)
+  }, [isPlaying])
+
+  return (
+    <>
+      <audio ref={audioRef} src="/music/romance.mp3" loop preload="none" />
+      <motion.button
+        className="fixed bottom-5 right-5 z-50 w-10 h-10 rounded-full flex items-center justify-center"
+        style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,80,100,0.12)',
+          backdropFilter: 'blur(10px)',
+        }}
+        onClick={toggle}
+        whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.08)' }}
+        whileTap={{ scale: 0.95 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 6, duration: 0.8, ease: easeOut }}
+        title={isPlaying ? 'Pause' : 'Musique'}
+      >
+        {isPlaying ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,180,190,0.7)" strokeWidth="1.5">
+            <rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />
+          </svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,180,190,0.5)" strokeWidth="1.5">
+            <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+          </svg>
+        )}
+      </motion.button>
+      {isPlaying && (
+        <motion.div
+          className="fixed bottom-5 right-[3.75rem] z-50 flex items-end gap-[3px] h-4"
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0 }}
+        >
+          {[...Array(3)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="w-[2px] rounded-full"
+              style={{ background: 'rgba(255,120,140,0.5)', height: '40%' }}
+              animate={{ height: ['40%', '100%', '60%', '100%', '40%'] }}
+              transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' as const }}
+            />
+          ))}
+        </motion.div>
+      )}
+    </>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── #11 DOUBLE-TAP HEART ───
+// ═══════════════════════════════════════════════════════
+function DoubleTapHeart() {
+  const [hearts, setHearts] = useState<{ id: number; x: number; y: number }[]>([])
+  const lastTap = useRef({ time: 0, x: 0, y: 0 })
+
+  useEffect(() => {
+    let nextId = 0
+    const handler = (e: MouseEvent) => {
+      const now = Date.now()
+      const dx = Math.abs(e.clientX - lastTap.current.x)
+      const dy = Math.abs(e.clientY - lastTap.current.y)
+      if (now - lastTap.current.time < 350 && dx < 50 && dy < 50) {
+        const id = nextId++
+        setHearts(prev => [...prev, { id, x: e.clientX, y: e.clientY }])
+        setTimeout(() => setHearts(prev => prev.filter(h => h.id !== id)), 1000)
+        lastTap.current = { time: 0, x: 0, y: 0 }
+      } else {
+        lastTap.current = { time: now, x: e.clientX, y: e.clientY }
+      }
+    }
+    window.addEventListener('click', handler)
+    return () => window.removeEventListener('click', handler)
+  }, [])
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[61]">
+      <AnimatePresence>
+        {hearts.map(h => (
+          <motion.div
+            key={h.id}
+            className="absolute"
+            style={{ left: h.x, top: h.y, translateX: '-50%', translateY: '-50%' }}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: [0, 1, 1, 0], scale: [0, 0.3, 1.3, 1.5], y: -40 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1, ease: easeOut }}
+          >
+            <span style={{ fontSize: '4rem', filter: 'drop-shadow(0 0 15px rgba(255,60,90,0.5))' }}>❤️</span>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── #9 WAVE TRANSITION (replaces Divider) ───
+// ═══════════════════════════════════════════════════════
+function WaveTransition({ flip = false }: { flip?: boolean }) {
+  return (
+    <div className="relative w-full" style={{ height: '40px', marginTop: '-1px', marginBottom: '-1px' }}>
+      <svg
+        viewBox="0 0 1200 40"
+        preserveAspectRatio="none"
+        className="absolute inset-0 w-full h-full"
+        style={{ transform: flip ? 'scaleY(-1)' : 'none' }}
+      >
+        <path
+          d="M0,20 C300,40 600,0 900,20 C1050,30 1150,15 1200,20 L1200,40 L0,40 Z"
+          fill="rgba(255,80,100,0.03)"
+        />
+        <path
+          d="M0,25 C200,10 500,35 800,18 C1000,8 1100,28 1200,22 L1200,40 L0,40 Z"
+          fill="rgba(255,80,100,0.015)"
+        />
+      </svg>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── FLOATING HEARTS & PETALS ───
+// ═══════════════════════════════════════════════════════
 function FloatingHearts() {
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {[...Array(10)].map((_, i) => (
+      {[...Array(8)].map((_, i) => (
         <motion.div
           key={`fh-${i}`}
           className="absolute"
           style={{
             left: `${5 + Math.random() * 90}%`,
-            fontSize: `${0.25 + Math.random() * 0.4}rem`,
-            opacity: 0.04 + Math.random() * 0.05,
-            color: colors.inkFaint,
+            fontSize: `${0.2 + Math.random() * 0.35}rem`,
+            opacity: 0.03 + Math.random() * 0.04,
+            color: c.inkFaint,
           }}
           initial={{ y: '110vh', rotate: 0 }}
           animate={{
@@ -79,7 +374,7 @@ function FloatingHearts() {
             x: [(Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40],
           }}
           transition={{
-            duration: 18 + Math.random() * 20,
+            duration: 20 + Math.random() * 20,
             repeat: Infinity,
             delay: Math.random() * 20,
             ease: 'linear' as const,
@@ -92,65 +387,51 @@ function FloatingHearts() {
   )
 }
 
-function ScrollIndicator() {
-  return (
-    <motion.div
-      className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 5.5, duration: 1, ease: easeOut }}
-    >
-      <span
-        className="tracking-[0.35em] uppercase"
-        style={{ ...script, color: colors.inkFaint, fontSize: '1.1rem' }}
-      >
-        fais défiler
-      </span>
-      <motion.div
-        animate={{ y: [0, 6, 0] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: easeSmooth }}
-        style={{ color: 'rgba(255, 120, 140, 0.25)' }}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
-        </svg>
-      </motion.div>
-    </motion.div>
-  )
-}
+function PetalsRain() {
+  const petals = useRef(
+    Array.from({ length: 5 }, (_, i) => ({
+      id: i,
+      left: 8 + Math.random() * 84,
+      delay: Math.random() * 25,
+      duration: 18 + Math.random() * 18,
+      size: 0.25 + Math.random() * 0.3,
+      rotation: Math.random() * 360,
+      drift: (Math.random() - 0.5) * 140,
+    }))
+  ).current
 
-function Divider() {
   return (
-    <div className="flex items-center justify-center py-8 md:py-12">
-      <motion.div
-        className="flex items-center gap-4"
-        initial={{ opacity: 0, scaleX: 0 }}
-        whileInView={{ opacity: 1, scaleX: 1 }}
-        viewport={{ once: true, margin: '-50px' }}
-        transition={{ duration: 1.2, ease: easeOut }}
-      >
-        <div className="h-px w-10 md:w-16" style={{ background: `linear-gradient(90deg, transparent, ${colors.line})` }} />
-        <motion.span
-          className="text-sm"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.5, 0.2] }}
-          transition={{ duration: 3, repeat: Infinity, ease: easeSmooth }}
-          style={{ color: colors.inkFaint }}
+    <div className="fixed inset-0 pointer-events-none z-[5] overflow-hidden">
+      {petals.map(p => (
+        <motion.div
+          key={p.id}
+          className="absolute"
+          style={{ left: `${p.left}%`, top: '-5%', fontSize: `${p.size}rem` }}
+          initial={{ y: 0, x: 0, rotate: 0, opacity: 0 }}
+          animate={{
+            y: '110vh',
+            x: [0, p.drift * 0.3, p.drift * 0.7, p.drift],
+            rotate: [p.rotation, p.rotation + 180, p.rotation + 360],
+            opacity: [0, 0.06, 0.06, 0],
+          }}
+          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'linear' as const }}
         >
-          ✦
-        </motion.span>
-        <div className="h-px w-10 md:w-16" style={{ background: `linear-gradient(90deg, ${colors.line}, transparent)` }} />
-      </motion.div>
+          🌸
+        </motion.div>
+      ))}
     </div>
   )
 }
 
-// ─── Section heading component ───
+// ═══════════════════════════════════════════════════════
+// ─── SHARED SECTION HEADING ───
+// ═══════════════════════════════════════════════════════
 function SectionHeading({ eyebrow, title, delay = 0 }: { eyebrow: string; title: string; delay?: number }) {
   return (
     <motion.div className="text-center mb-14 md:mb-16" style={{ maxWidth: '65ch', margin: '0 auto 3.5rem' }}>
       <motion.p
         className="tracking-[0.25em] uppercase mb-3"
-        style={{ ...script, color: colors.inkFaint, fontSize: '1rem' }}
+        style={{ ...script, color: c.inkFaint, fontSize: '1rem' }}
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
@@ -160,14 +441,7 @@ function SectionHeading({ eyebrow, title, delay = 0 }: { eyebrow: string; title:
       </motion.p>
       <motion.h2
         className="font-light"
-        style={{
-          ...display,
-          color: colors.ink,
-          fontSize: 'var(--text-h2)',
-          letterSpacing: '0.02em',
-          fontWeight: 300,
-          lineHeight: 1.2,
-        }}
+        style={{ ...display, color: c.ink, fontSize: 'var(--text-h2)', letterSpacing: '0.02em', fontWeight: 300, lineHeight: 1.2 }}
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -179,35 +453,30 @@ function SectionHeading({ eyebrow, title, delay = 0 }: { eyebrow: string; title:
   )
 }
 
-function PoemLine({ children, delay = 0, highlight = false }: { children: string; delay?: number; highlight?: boolean }) {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-50px' })
+function ScrollIndicator() {
   return (
-    <motion.p
-      ref={ref}
-      className="text-center"
-      style={{
-        ...display,
-        overflow: 'hidden',
-        fontSize: highlight ? 'clamp(1.1rem, 1.5vw, 1.3rem)' : 'var(--text-body)',
-        letterSpacing: highlight ? '0.03em' : '0.015em',
-        lineHeight: highlight ? 1.9 : 2,
-        fontWeight: highlight ? 500 : 300,
-        color: highlight ? colors.ink : colors.inkDim,
-      }}
-      // Impeccable: reveal must enhance already-visible default
-      initial={{ opacity: 0.15, y: 12, filter: 'blur(4px)' }}
-      animate={isInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
-      transition={{ duration: 1.2, delay, ease: easeOutExpo }}
+    <motion.div
+      className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 5.5, duration: 1, ease: easeOut }}
     >
-      {children}
-    </motion.p>
+      <span className="tracking-[0.35em] uppercase" style={{ ...script, color: c.inkFaint, fontSize: '1.1rem' }}>
+        fais défiler
+      </span>
+      <motion.div
+        animate={{ y: [0, 6, 0] }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: easeSmooth }}
+        style={{ color: 'rgba(255, 120, 140, 0.25)' }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M7 13l5 5 5-5M7 6l5 5 5-5" /></svg>
+      </motion.div>
+    </motion.div>
   )
 }
 
 // ═══════════════════════════════════════════════════════
-// ─── CINEMATIC GALLERY ───
-// Cinematic masonry with clip-path reveals (impeccable: premium motion)
+// ─── GALLERY (cinematic masonry) ───
 // ═══════════════════════════════════════════════════════
 function CinematicGallery() {
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null)
@@ -221,153 +490,57 @@ function CinematicGallery() {
   return (
     <section id="galerie" className="relative px-5 md:px-8" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
       <SectionHeading eyebrow="quelques souvenirs" title="La Plus Belle" />
-
       <div className="max-w-3xl mx-auto grid grid-cols-2 gap-2.5 md:gap-3.5 auto-rows-[180px] md:auto-rows-[220px]">
         {photos.map((photo, i) => (
           <motion.div
             key={i}
             className={`relative cursor-pointer overflow-hidden group ${photo.span}`}
-            style={{
-              borderRadius: '2px',
-            }}
-            // Clip-path reveal for premium feel
+            style={{ borderRadius: '2px' }}
             initial={{ clipPath: 'inset(100% 0 0 0)', opacity: 0.5 }}
             whileInView={{ clipPath: 'inset(0% 0 0 0)', opacity: 1 }}
             viewport={{ once: true, margin: '-30px' }}
             transition={{ duration: 1.2, delay: i * 0.15, ease: easeOutExpo }}
             onClick={() => setSelectedPhoto(i)}
           >
-            <Image
-              src={photo.src}
-              alt="Roxane"
-              fill
-              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-              sizes="(max-width: 768px) 45vw, 350px"
-            />
-            {/* Warm tonal overlay */}
-            <div
-              className="absolute inset-0 transition-opacity duration-500"
-              style={{
-                background: 'linear-gradient(180deg, rgba(11,4,7,0) 40%, rgba(11,4,7,0.7) 100%)',
-                opacity: 0.6,
-              }}
-            />
-            {/* Caption — always visible, enhances on hover */}
+            <Image src={photo.src} alt="Roxane" fill className="object-cover transition-transform duration-700 ease-out group-hover:scale-105" sizes="(max-width: 768px) 45vw, 350px" />
+            <div className="absolute inset-0 transition-opacity duration-500" style={{ background: 'linear-gradient(180deg, rgba(11,4,7,0) 40%, rgba(11,4,7,0.7) 100%)', opacity: 0.6 }} />
             <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
-              <p
-                className="transition-all duration-500"
-                style={{
-                  ...script,
-                  color: `color-mix(in oklch, ${colors.ink} 70%, transparent)`,
-                  fontSize: 'clamp(0.85rem, 1.2vw, 1.05rem)',
-                  transform: 'translateY(4px)',
-                }}
-              >
-                {photo.caption}
-              </p>
+              <p style={{ ...script, color: `color-mix(in oklch, ${c.ink} 70%, transparent)`, fontSize: 'clamp(0.85rem, 1.2vw, 1.05rem)' }}>{photo.caption}</p>
             </div>
-            {/* Hover: subtle border glow */}
-            <div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-              style={{
-                boxShadow: 'inset 0 0 0 1px rgba(255, 100, 130, 0.15), 0 8px 30px rgba(0,0,0,0.4)',
-              }}
-            />
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: 'inset 0 0 0 1px rgba(255,100,130,0.15), 0 8px 30px rgba(0,0,0,0.4)' }} />
           </motion.div>
         ))}
       </div>
-
-      {/* Lightbox — cinematic wide format */}
       <AnimatePresence>
         {selectedPhoto !== null && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
-            style={{ background: 'rgba(5, 2, 3, 0.96)', backdropFilter: 'blur(20px)' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            style={{ background: 'rgba(5,2,3,0.96)', backdropFilter: 'blur(20px)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.4, ease: easeOut }}
             onClick={() => setSelectedPhoto(null)}
           >
             <motion.div
               className="relative w-full max-w-2xl aspect-[4/5] md:aspect-[3/4] overflow-hidden"
-              style={{
-                borderRadius: '3px',
-                boxShadow: '0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)',
-              }}
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              style={{ borderRadius: '3px', boxShadow: '0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)' }}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ duration: 0.5, ease: easeOutExpo }}
               onClick={(e) => e.stopPropagation()}
             >
-              <Image
-                src={photos[selectedPhoto].src}
-                alt="Roxane"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 90vw, 600px"
-              />
-              {/* Vignette */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{ boxShadow: 'inset 0 0 100px rgba(0,0,0,0.4)' }}
-              />
-              {/* Film grain overlay */}
-              <div
-                className="absolute inset-0 pointer-events-none opacity-[0.03]"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                }}
-              />
+              <Image src={photos[selectedPhoto].src} alt="Roxane" fill className="object-cover" sizes="(max-width: 768px) 90vw, 600px" />
+              <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 100px rgba(0,0,0,0.4)' }} />
             </motion.div>
-            <motion.p
-              className="absolute bottom-6 md:bottom-10 left-0 right-0 text-center"
-              style={{ ...script, color: colors.inkDim, fontSize: '1.2rem' }}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.6, ease: easeOut }}
-            >
+            <motion.p className="absolute bottom-6 md:bottom-10 left-0 right-0 text-center" style={{ ...script, color: c.inkDim, fontSize: '1.2rem' }} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.6, ease: easeOut }}>
               {photos[selectedPhoto].caption}
             </motion.p>
-            {/* Close */}
-            <motion.button
-              className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
-              onClick={() => setSelectedPhoto(null)}
-              whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.12)' }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
+            <motion.button className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }} onClick={() => setSelectedPhoto(null)} whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.12)' }} whileTap={{ scale: 0.95 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </motion.button>
-            {/* Nav */}
-            <motion.button
-              className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setSelectedPhoto(selectedPhoto === 0 ? photos.length - 1 : selectedPhoto - 1)
-              }}
-              whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.1)' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
+            <motion.button className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }} onClick={(e) => { e.stopPropagation(); setSelectedPhoto(selectedPhoto === 0 ? photos.length - 1 : selectedPhoto - 1) }} whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.1)' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M15 18l-6-6 6-6" /></svg>
             </motion.button>
-            <motion.button
-              className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setSelectedPhoto((selectedPhoto + 1) % photos.length)
-              }}
-              whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.1)' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
+            <motion.button className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }} onClick={(e) => { e.stopPropagation(); setSelectedPhoto((selectedPhoto + 1) % photos.length) }} whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.1)' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 18l6-6-6-6" /></svg>
             </motion.button>
           </motion.div>
         )}
@@ -376,7 +549,189 @@ function CinematicGallery() {
   )
 }
 
+// ═══════════════════════════════════════════════════════
+// ─── #5 COUNTER SECTION ───
+// ═══════════════════════════════════════════════════════
+function CounterSection() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-100px' })
+  const [counts, setCounts] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+
+  useEffect(() => {
+    if (!isInView) return
+    const calc = () => {
+      const now = new Date()
+      const diff = now.getTime() - COUPLE_START_DATE.getTime()
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+      setCounts({ days, hours, minutes, seconds })
+    }
+    calc()
+    const interval = setInterval(calc, 1000)
+    return () => clearInterval(interval)
+  }, [isInView])
+
+  const units = [
+    { value: counts.days, label: 'jours' },
+    { value: counts.hours, label: 'heures' },
+    { value: counts.minutes, label: 'minutes' },
+    { value: counts.seconds, label: 'secondes' },
+  ]
+
+  return (
+    <section ref={ref} className="relative px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+      <SectionHeading eyebrow="depuis le premier jour" title="Notre Histoire Continue" />
+      <div className="flex justify-center gap-6 md:gap-10">
+        {units.map((unit, i) => (
+          <motion.div
+            key={unit.label}
+            className="text-center"
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: i * 0.12, ease: easeOutExpo }}
+          >
+            <motion.span
+              className="block tabular-nums"
+              style={{
+                ...display,
+                color: c.accent,
+                fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+                fontWeight: 300,
+                lineHeight: 1,
+                letterSpacing: '0.02em',
+              }}
+            >
+              {String(unit.value).padStart(2, '0')}
+            </motion.span>
+            <span
+              className="block mt-1.5 uppercase"
+              style={{ ...display, color: c.inkFaint, fontSize: '0.7rem', letterSpacing: '0.15em', fontWeight: 400 }}
+            >
+              {unit.label}
+            </span>
+          </motion.div>
+        ))}
+      </div>
+      <motion.p
+        className="text-center mt-10"
+        style={{ ...script, color: c.inkFaint, fontSize: '1.1rem' }}
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1, delay: 0.6 }}
+      >
+        et chaque seconde est un cadeau
+      </motion.p>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── #3 ENVELOPE SECTION ───
+// ═══════════════════════════════════════════════════════
+function EnvelopeSection() {
+  const [isOpen, setIsOpen] = useState(false)
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-100px' })
+
+  useEffect(() => {
+    if (isInView) {
+      const timer = setTimeout(() => setIsOpen(true), 800)
+      return () => clearTimeout(timer)
+    }
+  }, [isInView])
+
+  return (
+    <section ref={ref} className="relative flex items-center justify-center px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+      <div className="relative w-full max-w-md mx-auto" style={{ perspective: '1000px' }}>
+        {/* Envelope body */}
+        <motion.div
+          className="relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgba(40,20,25,0.6), rgba(25,10,15,0.8))',
+            border: '1px solid rgba(255,80,100,0.08)',
+            borderRadius: '4px',
+            minHeight: '280px',
+          }}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: easeOutExpo }}
+        >
+          {/* Letter */}
+          <motion.div
+            className="p-8 md:p-10 relative z-10"
+            initial={{ y: 0 }}
+            animate={isOpen ? { y: -20 } : { y: 0 }}
+            transition={{ duration: 1.2, ease: easeOutExpo }}
+          >
+            <p style={{ ...script, color: c.ink, fontSize: 'clamp(1.2rem, 2vw, 1.5rem)', marginBottom: '1rem' }}>
+              Ma chère Roxane,
+            </p>
+            <p className="leading-relaxed" style={{ ...display, color: c.inkDim, fontSize: 'var(--text-body)', fontWeight: 300, letterSpacing: '0.01em', maxWidth: '55ch' }}>
+              Si tu lis ces mots, c&apos;est que tu es la personne la plus importante de ma vie.
+              Chaque jour à tes côtés est un cadeau que je ne mérite pas, mais que je chéris plus que tout.
+              Tu es mon refuge, ma force, et la raison pour laquelle je crois en l&apos;amour.
+            </p>
+            <p className="mt-6" style={{ ...script, color: c.accentSoft, fontSize: 'clamp(1rem, 1.5vw, 1.2rem)' }}>
+              À toi, pour toujours.
+            </p>
+          </motion.div>
+
+          {/* Envelope flap */}
+          <div className="absolute top-0 left-0 right-0 overflow-hidden" style={{ height: '140px', zIndex: isOpen ? 5 : 20 }}>
+            <motion.div
+              className="w-0 h-0"
+              style={{
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                borderLeft: '200px solid transparent',
+                borderRight: '200px solid transparent',
+                borderTop: '140px solid rgba(50,25,35,0.95)',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+                transformOrigin: 'top center',
+              }}
+              initial={{ rotateX: 0 }}
+              animate={isOpen ? { rotateX: 180 } : { rotateX: 0 }}
+              transition={{ duration: 1, ease: easeOutExpo }}
+            />
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
 // ─── POEM SECTION ───
+// ═══════════════════════════════════════════════════════
+function PoemLine({ children, delay = 0, highlight = false }: { children: string; delay?: number; highlight?: boolean }) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-50px' })
+  return (
+    <motion.p
+      ref={ref}
+      className="text-center"
+      style={{
+        ...display,
+        fontSize: highlight ? 'clamp(1.1rem, 1.5vw, 1.3rem)' : 'var(--text-body)',
+        letterSpacing: highlight ? '0.03em' : '0.015em',
+        lineHeight: highlight ? 1.9 : 2,
+        fontWeight: highlight ? 500 : 300,
+        color: highlight ? c.ink : c.inkDim,
+      }}
+      initial={{ opacity: 0.15, y: 12, filter: 'blur(4px)' }}
+      animate={isInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+      transition={{ duration: 1.2, delay, ease: easeOutExpo }}
+    >
+      {children}
+    </motion.p>
+  )
+}
+
 function PoemSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
@@ -390,9 +745,7 @@ function PoemSection() {
         animate={isInView ? { opacity: 1, scale: 1 } : {}}
         transition={{ duration: 2, ease: easeOutExpo }}
       />
-
       <SectionHeading eyebrow="mots du cœur" title="Mon Poème pour Toi" />
-
       <div className="max-w-lg space-y-3 relative z-10">
         <PoemLine delay={0.2}>Roxane, dans le silence de la nuit,</PoemLine>
         <PoemLine delay={0.4}>je murmure ton nom dans le vent,</PoemLine>
@@ -416,8 +769,57 @@ function PoemSection() {
   )
 }
 
+// ═══════════════════════════════════════════════════════
+// ─── #7 PROMISES SECTION ───
+// ═══════════════════════════════════════════════════════
+function PromisesSection() {
+  const promises = [
+    'Je promets de te faire rire chaque jour, même quand tout va mal.',
+    'Je promets d\'être ton refuge quand le monde sera trop lourd.',
+    'Je promets de t\'écouter, vraiment t\'écouter, même à 3h du matin.',
+    'Je promets de te choisir, encore et encore, chaque matin.',
+    'Je promets de danser avec toi dans la cuisine, même sans musique.',
+    'Je promets que ton cœur sera toujours en sécurité avec moi.',
+  ]
+
+  return (
+    <section className="relative px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+      <SectionHeading eyebrow="mes vœux pour toi" title="Mes Promesses" />
+      <div className="max-w-lg mx-auto space-y-8">
+        {promises.map((promise, i) => (
+          <motion.div
+            key={i}
+            className="relative pl-6"
+            style={{
+              borderLeft: `1px solid rgba(255,80,100,${0.08 + (i / promises.length) * 0.15})`,
+            }}
+            initial={{ opacity: 0.15, x: -15 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-20px' }}
+            transition={{ duration: 0.8, delay: i * 0.1, ease: easeOutExpo }}
+          >
+            <p
+              className="leading-relaxed italic"
+              style={{
+                ...display,
+                color: c.inkDim,
+                fontSize: 'var(--text-body)',
+                fontWeight: 400,
+                letterSpacing: '0.01em',
+              }}
+            >
+              &ldquo;{promise}&rdquo;
+            </p>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════
 // ─── REASONS SECTION ───
-// Impeccable: "cards are the lazy answer" — use a refined list instead
+// ═══════════════════════════════════════════════════════
 function ReasonsSection() {
   const reasons = [
     'Ton rire qui illumine ma journée entière, Roxane',
@@ -432,11 +834,10 @@ function ReasonsSection() {
   return (
     <section id="raisons" className="relative px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
       <SectionHeading eyebrow="parce que tu mérites de savoir" title="Pourquoi Je T&apos;aime" />
-
       <div className="max-w-lg mx-auto relative">
         <motion.div
           className="absolute left-3 top-0 bottom-0 w-px"
-          style={{ background: `linear-gradient(to bottom, transparent, ${colors.line}, ${colors.line}, transparent)` }}
+          style={{ background: `linear-gradient(to bottom, transparent, ${c.line}, ${c.line}, transparent)` }}
           initial={{ scaleY: 0 }}
           whileInView={{ scaleY: 1 }}
           viewport={{ once: true }}
@@ -446,30 +847,20 @@ function ReasonsSection() {
           {reasons.map((reason, i) => (
             <motion.div
               key={i}
-              className="relative pl-10 md:pl-12 group"
+              className="relative pl-10 md:pl-12"
               initial={{ opacity: 0.15, x: -12 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: '-20px' }}
               transition={{ duration: 0.8, delay: i * 0.08, ease: easeOutExpo }}
             >
-              {/* Dot marker */}
               <motion.div
                 className="absolute left-[5px] md:left-[7px] top-[7px] w-2 h-2 rounded-full"
-                style={{ background: colors.accent }}
+                style={{ background: c.accent }}
                 whileInView={{ scale: [0, 1.4, 1] }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.08 + 0.1, ease: easeOut }}
               />
-              <p
-                className="leading-relaxed transition-colors duration-300"
-                style={{
-                  ...display,
-                  color: colors.inkDim,
-                  fontSize: 'var(--text-body)',
-                  fontWeight: 400,
-                  letterSpacing: '0.01em',
-                }}
-              >
+              <p className="leading-relaxed" style={{ ...display, color: c.inkDim, fontSize: 'var(--text-body)', fontWeight: 400, letterSpacing: '0.01em' }}>
                 {reason}
               </p>
             </motion.div>
@@ -480,8 +871,9 @@ function ReasonsSection() {
   )
 }
 
+// ═══════════════════════════════════════════════════════
 // ─── TIMELINE SECTION ───
-// Impeccable: numbered markers only when content is a real sequence
+// ═══════════════════════════════════════════════════════
 function TimelineSection() {
   const moments = [
     { title: 'Le jour où on s\'est rencontrés', text: 'Le jour où tout a commencé, où le monde a changé de couleur grâce à toi, Roxane.' },
@@ -492,11 +884,10 @@ function TimelineSection() {
   return (
     <section id="moments" className="relative px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
       <SectionHeading eyebrow="gravés dans ma mémoire" title="Nos Plus Beaux Moments" />
-
       <div className="max-w-md mx-auto relative">
         <motion.div
           className="absolute left-3 md:left-4 top-0 bottom-0 w-px"
-          style={{ background: `linear-gradient(to bottom, transparent, ${colors.line}, ${colors.line}, transparent)` }}
+          style={{ background: `linear-gradient(to bottom, transparent, ${c.line}, ${c.line}, transparent)` }}
           initial={{ scaleY: 0 }}
           whileInView={{ scaleY: 1 }}
           viewport={{ once: true }}
@@ -514,35 +905,15 @@ function TimelineSection() {
             >
               <motion.div
                 className="absolute left-[3px] md:left-[5px] top-1 w-3 h-3 rounded-full"
-                style={{ background: 'rgba(255,50,80,0.12)', border: `1.5px solid ${colors.accentSoft}` }}
+                style={{ background: 'rgba(255,50,80,0.12)', border: `1.5px solid ${c.accentSoft}` }}
                 whileInView={{ scale: [0, 1.3, 1] }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: 0.25, ease: easeOut }}
               />
-              <h3
-                className="mb-1.5"
-                style={{
-                  ...display,
-                  color: colors.ink,
-                  fontSize: 'var(--text-h3)',
-                  fontWeight: 500,
-                  letterSpacing: '0.01em',
-                  lineHeight: 1.3,
-                }}
-              >
+              <h3 style={{ ...display, color: c.ink, fontSize: 'var(--text-h3)', fontWeight: 500, letterSpacing: '0.01em', lineHeight: 1.3, marginBottom: '0.375rem' }}>
                 {moment.title}
               </h3>
-              <p
-                className="leading-relaxed"
-                style={{
-                  ...display,
-                  color: colors.inkFaint,
-                  fontSize: 'var(--text-body)',
-                  fontWeight: 300,
-                  letterSpacing: '0.01em',
-                  maxWidth: '55ch',
-                }}
-              >
+              <p style={{ ...display, color: c.inkFaint, fontSize: 'var(--text-body)', fontWeight: 300, letterSpacing: '0.01em', maxWidth: '55ch', lineHeight: 1.6 }}>
                 {moment.text}
               </p>
             </motion.div>
@@ -553,7 +924,9 @@ function TimelineSection() {
   )
 }
 
-// ─── FINAL SECTION ───
+// ═══════════════════════════════════════════════════════
+// ─── #10 FINAL SECTION (typewriter) ───
+// ═══════════════════════════════════════════════════════
 function FinalSection() {
   const ref = useRef(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
@@ -561,50 +934,55 @@ function FinalSection() {
   const scale = useTransform(scrollYProgress, [0, 0.4, 0.7, 1], [0.9, 1, 1, 0.95])
   const y = useTransform(scrollYProgress, [0, 0.5, 1], [40, 0, -20])
 
+  const fullText = 'Je t\'aime plus que tous les mots du monde.'
+  const [displayedText, setDisplayedText] = useState('')
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const isTypingDone = useRef(false)
+
+  useEffect(() => {
+    if (isTypingDone.current) return
+    const el = sectionRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isTypingDone.current) {
+          isTypingDone.current = true
+          let i = 0
+          const interval = setInterval(() => {
+            setDisplayedText(fullText.slice(0, i + 1))
+            i++
+            if (i >= fullText.length) clearInterval(interval)
+          }, 55)
+        }
+      },
+      { threshold: 0.5 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [fullText])
+
   return (
-    <section
-      ref={ref}
-      className="relative flex items-center justify-center px-6 py-24 overflow-hidden"
-      style={{ minHeight: '100vh' }}
-    >
+    <section ref={ref} className="relative flex items-center justify-center px-6 py-24 overflow-hidden" style={{ minHeight: '100vh' }}>
       <motion.div
         className="absolute w-[400px] h-[400px] md:w-[500px] md:h-[500px] rounded-full pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(255,40,70,0.1) 0%, transparent 70%)',
-          filter: 'blur(50px)',
-        }}
+        style={{ background: 'radial-gradient(circle, rgba(255,40,70,0.1) 0%, transparent 70%)', filter: 'blur(50px)' }}
         animate={{ scale: [1, 1.06, 1], opacity: [0.4, 0.65, 0.4] }}
-        transition={{ duration: 5, repeat: Infinity, ease: easeSmooth }}
+        transition={{ duration: 5, repeat: Infinity, ease: easeSmooth as unknown as number[] }}
       />
-      <motion.div
-        className="relative z-10 text-center max-w-lg mx-auto"
-        style={{ opacity, scale, y }}
-      >
+      <motion.div className="relative z-10 text-center max-w-lg mx-auto" style={{ opacity, scale, y }}>
         <motion.div
           className="text-5xl md:text-6xl mb-6"
           animate={{
             scale: [1, 1.08, 1],
-            filter: [
-              'drop-shadow(0 0 12px rgba(255,60,90,0.2))',
-              'drop-shadow(0 0 30px rgba(255,60,90,0.5))',
-              'drop-shadow(0 0 12px rgba(255,60,90,0.2))',
-            ],
+            filter: ['drop-shadow(0 0 12px rgba(255,60,90,0.2))', 'drop-shadow(0 0 30px rgba(255,60,90,0.5))', 'drop-shadow(0 0 12px rgba(255,60,90,0.2))'],
           }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: easeSmooth }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: easeSmooth as unknown as number[] }}
         >
           ❤️
         </motion.div>
         <motion.h2
           className="font-light mb-2"
-          style={{
-            ...display,
-            color: colors.ink,
-            fontSize: 'var(--text-h2)',
-            letterSpacing: '0.03em',
-            fontWeight: 300,
-            lineHeight: 1.2,
-            textShadow: '0 0 25px rgba(255,80,100,0.15)',
-          }}
+          style={{ ...display, color: c.ink, fontSize: 'var(--text-h2)', letterSpacing: '0.03em', fontWeight: 300, lineHeight: 1.2, textShadow: '0 0 25px rgba(255,80,100,0.15)' }}
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -614,7 +992,7 @@ function FinalSection() {
         </motion.h2>
         <motion.p
           className="mb-8"
-          style={{ ...script, color: colors.accentSoft, fontSize: 'clamp(1.3rem, 2vw, 1.7rem)', letterSpacing: '0.06em' }}
+          style={{ ...script, color: c.accentSoft, fontSize: 'clamp(1.3rem, 2vw, 1.7rem)', letterSpacing: '0.06em' }}
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -624,7 +1002,7 @@ function FinalSection() {
         </motion.p>
         <motion.div
           className="mx-auto mb-8"
-          style={{ width: 50, height: 1, background: `linear-gradient(90deg, transparent, ${colors.line}, transparent)` }}
+          style={{ width: 50, height: 1, background: `linear-gradient(90deg, transparent, ${c.line}, transparent)` }}
           initial={{ scaleX: 0 }}
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true }}
@@ -632,15 +1010,7 @@ function FinalSection() {
         />
         <motion.p
           className="leading-relaxed mb-3"
-          style={{
-            ...display,
-            color: colors.inkFaint,
-            fontSize: 'var(--text-body)',
-            fontWeight: 300,
-            letterSpacing: '0.02em',
-            maxWidth: '55ch',
-            margin: '0 auto 0.75rem',
-          }}
+          style={{ ...display, color: c.inkFaint, fontSize: 'var(--text-body)', fontWeight: 300, letterSpacing: '0.02em', maxWidth: '55ch', margin: '0 auto 0.75rem' }}
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -650,15 +1020,7 @@ function FinalSection() {
         </motion.p>
         <motion.p
           className="leading-relaxed mb-6"
-          style={{
-            ...display,
-            color: colors.inkFaint,
-            fontSize: 'var(--text-body)',
-            fontWeight: 300,
-            letterSpacing: '0.02em',
-            maxWidth: '55ch',
-            margin: '0 auto 1.5rem',
-          }}
+          style={{ ...display, color: c.inkFaint, fontSize: 'var(--text-body)', fontWeight: 300, letterSpacing: '0.02em', maxWidth: '55ch', margin: '0 auto 1.5rem' }}
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -666,64 +1028,36 @@ function FinalSection() {
         >
           de tout ce que mon cœur ressent pour toi, Roxane.
         </motion.p>
-        <motion.p
-          className="italic mt-6"
-          style={{
-            ...script,
-            color: colors.ink,
-            fontSize: 'clamp(1.1rem, 1.8vw, 1.35rem)',
-            letterSpacing: '0.03em',
-            textShadow: '0 0 12px rgba(255,80,100,0.1)',
-          }}
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 1, ease: easeOut }}
-        >
-          Je t&apos;aime plus que tous les mots du monde.
-        </motion.p>
+        <div ref={sectionRef}>
+          <p
+            className="italic mt-6"
+            style={{
+              ...script,
+              color: c.ink,
+              fontSize: 'clamp(1.1rem, 1.8vw, 1.35rem)',
+              letterSpacing: '0.03em',
+              textShadow: '0 0 12px rgba(255,80,100,0.1)',
+              minHeight: '2em',
+            }}
+          >
+            {displayedText}
+            <motion.span
+              animate={{ opacity: [1, 0] }}
+              transition={{ duration: 0.5, repeat: Infinity, ease: 'easeInOut' as const }}
+              style={{ color: c.accent }}
+            >
+              |
+            </motion.span>
+          </p>
+        </div>
       </motion.div>
     </section>
   )
 }
 
-// ─── PETALS — fewer, more refined ───
-function PetalsRain() {
-  const petals = Array.from({ length: 6 }, (_, i) => ({
-    id: i,
-    left: 8 + Math.random() * 84,
-    delay: Math.random() * 25,
-    duration: 15 + Math.random() * 18,
-    size: 0.3 + Math.random() * 0.35,
-    rotation: Math.random() * 360,
-    drift: (Math.random() - 0.5) * 150,
-  }))
-  return (
-    <div className="fixed inset-0 pointer-events-none z-[5] overflow-hidden">
-      {petals.map(p => (
-        <motion.div
-          key={p.id}
-          className="absolute"
-          style={{ left: `${p.left}%`, top: '-5%', fontSize: `${p.size}rem` }}
-          initial={{ y: 0, x: 0, rotate: 0, opacity: 0 }}
-          animate={{
-            y: '110vh',
-            x: [0, p.drift * 0.3, p.drift * 0.7, p.drift],
-            rotate: [p.rotation, p.rotation + 180, p.rotation + 360],
-            opacity: [0, 0.08, 0.08, 0],
-          }}
-          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'linear' as const }}
-        >
-          🌸
-        </motion.div>
-      ))}
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // ─── MAIN PAGE ───
-// ═══════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 export default function Home() {
   const heroRef = useRef(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
@@ -732,24 +1066,25 @@ export default function Home() {
   const heroY = useTransform(scrollYProgress, [0, 0.8], [0, -40])
 
   return (
-    <div
-      className="relative"
-      style={{
-        background: 'linear-gradient(180deg, #0b0407 0%, #110810 25%, #0e0610 50%, #0a0818 75%, #0b0407 100%)',
-      }}
-    >
-      <AmbientParticles />
+    <div className="relative" style={{ background: 'linear-gradient(180deg, #0b0407 0%, #110810 25%, #0e0610 50%, #0a0818 75%, #0b0407 100%)' }}>
+      {/* Fixed layers */}
+      <StarField />
       <FloatingHearts />
       <PetalsRain />
+      <HeartProgressBar />
+      <ClickSparkles />
+      <CursorHeartTrail />
+      <DoubleTapHeart />
+      <MusicPlayer />
 
-      {/* ═══ HERO — the thesis (frontend-design skill) ═══ */}
+      {/* ═══ HERO ═══ */}
       <motion.section
         ref={heroRef}
         className="relative flex flex-col items-center justify-center overflow-hidden"
         style={{ minHeight: '100vh', opacity: heroOpacity, scale: heroScale, y: heroY }}
       >
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(8)].map((_, i) => (
+          {[...Array(6)].map((_, i) => (
             <motion.div
               key={`hp-${i}`}
               className="absolute rounded-full"
@@ -760,22 +1095,12 @@ export default function Home() {
                 top: `${15 + Math.random() * 70}%`,
                 background: `rgba(255, ${80 + Math.random() * 80}, ${100 + Math.random() * 60}, ${0.06 + Math.random() * 0.1})`,
               }}
-              animate={{
-                y: [-12, 12, -12],
-                x: [-6, 6, -6],
-                opacity: [0.06, 0.18, 0.06],
-              }}
-              transition={{
-                duration: 5 + Math.random() * 5,
-                repeat: Infinity,
-                ease: easeSmooth as unknown as number[],
-                delay: Math.random() * 3,
-              }}
+              animate={{ y: [-12, 12, -12], x: [-6, 6, -6], opacity: [0.06, 0.18, 0.06] }}
+              transition={{ duration: 5 + Math.random() * 5, repeat: Infinity, ease: easeSmooth as unknown as number[], delay: Math.random() * 3 }}
             />
           ))}
         </div>
 
-        {/* Signature element: the heart — bold, everything else quiet */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -794,21 +1119,8 @@ export default function Home() {
         >
           <motion.h1
             className="font-light"
-            style={{
-              ...display,
-              color: colors.ink,
-              fontSize: 'var(--text-display)',
-              letterSpacing: '0.04em',
-              fontWeight: 300,
-              lineHeight: 1.15,
-            }}
-            animate={{
-              textShadow: [
-                '0 0 20px rgba(255, 80, 100, 0.15)',
-                '0 0 40px rgba(255, 80, 100, 0.35)',
-                '0 0 20px rgba(255, 80, 100, 0.15)',
-              ],
-            }}
+            style={{ ...display, color: c.ink, fontSize: 'var(--text-display)', letterSpacing: '0.04em', fontWeight: 300, lineHeight: 1.15 }}
+            animate={{ textShadow: ['0 0 20px rgba(255,80,100,0.15)', '0 0 40px rgba(255,80,100,0.35)', '0 0 20px rgba(255,80,100,0.15)'] }}
             transition={{ duration: 3, repeat: Infinity, ease: easeSmooth as unknown as number[] }}
           >
             Roxane, Tu Es Mon Seul Amour
@@ -818,16 +1130,11 @@ export default function Home() {
             animate={{ scaleX: 1 }}
             transition={{ duration: 0.8, delay: 4.2, ease: easeOutExpo }}
             className="mt-4 mx-auto"
-            style={{ width: 45, height: 1, background: `linear-gradient(90deg, transparent, ${colors.line}, transparent)` }}
+            style={{ width: 45, height: 1, background: `linear-gradient(90deg, transparent, ${c.line}, transparent)` }}
           />
           <motion.p
             className="mt-3"
-            style={{
-              ...script,
-              color: colors.inkFaint,
-              letterSpacing: '0.08em',
-              fontSize: 'clamp(1rem, 1.5vw, 1.2rem)',
-            }}
+            style={{ ...script, color: c.inkFaint, letterSpacing: '0.08em', fontSize: 'clamp(1rem, 1.5vw, 1.2rem)' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 4.8, ease: easeOut }}
@@ -837,36 +1144,35 @@ export default function Home() {
         </motion.div>
 
         <ScrollIndicator />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(11, 4, 7, 0.8) 100%)' }}
-        />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(11,4,7,0.8) 100%)' }} />
       </motion.section>
 
-      {/* ═══ GALLERY ═══ */}
-      <Divider />
+      {/* ═══ SECTIONS ═══ */}
+      <WaveTransition />
       <CinematicGallery />
-      <Divider />
+      <WaveTransition flip />
 
-      {/* ═══ POEM ═══ */}
+      <CounterSection />
+      <WaveTransition />
+
+      <EnvelopeSection />
+      <WaveTransition flip />
+
       <PoemSection />
-      <Divider />
+      <WaveTransition />
 
-      {/* ═══ REASONS ═══ */}
+      <PromisesSection />
+      <WaveTransition />
+
       <ReasonsSection />
-      <Divider />
+      <WaveTransition />
 
-      {/* ═══ TIMELINE ═══ */}
       <TimelineSection />
-      <Divider />
+      <WaveTransition flip />
 
-      {/* ═══ FINAL ═══ */}
       <FinalSection />
 
-      <div
-        className="h-20 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, var(--surface))' }}
-      />
+      <div className="h-20 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, var(--surface))' }} />
     </div>
   )
 }
