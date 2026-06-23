@@ -1,0 +1,502 @@
+     1→   600→   600→      </span>
+     2→   601→   601→      <motion.div
+     3→   602→   602→        animate={{ y: [0, 6, 0] }}
+     4→   603→   603→        transition={{ duration: 1.5, repeat: Infinity, ease: easeSmooth }}
+     5→   604→   604→        style={{ color: 'rgba(255, 120, 140, 0.25)' }}
+     6→   605→   605→      >
+     7→   606→   606→        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M7 13l5 5 5-5M7 6l5 5 5-5" /></svg>
+     8→   607→   607→      </motion.div>
+     9→   608→   608→    </motion.div>
+    10→   609→   609→  )
+    11→   610→   610→}
+    12→   611→   611→
+    13→   612→   612→// ═══════════════════════════════════════════════════════
+    14→   613→   613→// ─── GALLERY (cinematic masonry) ───
+    15→   614→   614→// ═══════════════════════════════════════════════════════
+    16→   615→   615→function CinematicGallery() {
+    17→   616→   616→  const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null)
+    18→   617→   617→  const photos = [
+    19→   618→   618→    { src: '/photos/roxane-1.jpg', caption: 'Mon rayon de soleil', span: 'row-span-2' },
+    20→   619→   619→    { src: '/photos/roxane-2.jpg', caption: 'Celle qui fait battre mon cœur', span: '' },
+    21→   620→   620→    { src: '/photos/roxane-3.jpg', caption: 'La plus belle femme du monde', span: '' },
+    22→   621→   621→    { src: '/photos/roxane-4.jpg', caption: 'Mon bonheur à moi', span: 'col-span-2' },
+    23→   622→   622→  ]
+    24→   623→   623→
+    25→   624→   624→  return (
+    26→   625→   625→    <section id="galerie" className="relative px-5 md:px-8" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+    27→   626→   626→      <SectionHeading eyebrow="quelques souvenirs" title="La Plus Belle" />
+    28→   627→   627→      <div className="max-w-3xl mx-auto grid grid-cols-2 gap-2.5 md:gap-3.5 auto-rows-[180px] md:auto-rows-[220px]">
+    29→   628→   628→        {photos.map((photo, i) => (
+    30→   629→   629→          <motion.div
+    31→   630→   630→            key={i}
+    32→   631→   631→            className={`relative cursor-pointer overflow-hidden group ${photo.span}`}
+    33→   632→   632→            style={{ borderRadius: '2px' }}
+    34→   633→   633→            initial={{ clipPath: 'inset(100% 0 0 0)', opacity: 0.5 }}
+    35→   634→   634→            whileInView={{ clipPath: 'inset(0% 0 0 0)', opacity: 1 }}
+    36→   635→   635→            viewport={{ once: true, margin: '-30px' }}
+    37→   636→   636→            transition={{ duration: 1.2, delay: i * 0.15, ease: easeOutExpo }}
+    38→   637→   637→            onClick={() => setSelectedPhoto(i)}
+    39→   638→   638→          >
+    40→   639→   639→            <Image src={photo.src} alt="Roxane" fill className="object-cover transition-transform duration-700 ease-out group-hover:scale-105" sizes="(max-width: 768px) 45vw, 350px" />
+    41→   640→   640→            <div className="absolute inset-0 transition-opacity duration-500" style={{ background: 'linear-gradient(180deg, rgba(11,4,7,0) 40%, rgba(11,4,7,0.7) 100%)', opacity: 0.6 }} />
+    42→   641→   641→            <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
+    43→   642→   642→              <p style={{ ...script, color: `color-mix(in oklch, ${c.ink} 70%, transparent)`, fontSize: 'clamp(0.85rem, 1.2vw, 1.05rem)' }}>{photo.caption}</p>
+    44→   643→   643→            </div>
+    45→   644→   644→            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: 'inset 0 0 0 1px rgba(255,100,130,0.15), 0 8px 30px rgba(0,0,0,0.4)' }} />
+    46→   645→   645→          </motion.div>
+    47→   646→   646→        ))}
+    48→   647→   647→      </div>
+    49→   648→   648→      <AnimatePresence>
+    50→   649→   649→        {selectedPhoto !== null && (
+    51→   650→   650→          <motion.div
+    52→   651→   651→            className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+    53→   652→   652→            style={{ background: 'rgba(5,2,3,0.96)', backdropFilter: 'blur(20px)' }}
+    54→   653→   653→            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    55→   654→   654→            transition={{ duration: 0.4, ease: easeOut }}
+    56→   655→   655→            onClick={() => setSelectedPhoto(null)}
+    57→   656→   656→          >
+    58→   657→   657→            <motion.div
+    59→   658→   658→              className="relative w-full max-w-2xl aspect-[4/5] md:aspect-[3/4] overflow-hidden"
+    60→   659→   659→              style={{ borderRadius: '3px', boxShadow: '0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)' }}
+    61→   660→   660→              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+    62→   661→   661→              transition={{ duration: 0.5, ease: easeOutExpo }}
+    63→   662→   662→              onClick={(e) => e.stopPropagation()}
+    64→   663→   663→            >
+    65→   664→   664→              <Image src={photos[selectedPhoto].src} alt="Roxane" fill className="object-cover" sizes="(max-width: 768px) 90vw, 600px" />
+    66→   665→   665→              <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 100px rgba(0,0,0,0.4)' }} />
+    67→   666→   666→            </motion.div>
+    68→   667→   667→            <motion.p className="absolute bottom-6 md:bottom-10 left-0 right-0 text-center" style={{ ...script, color: c.inkDim, fontSize: '1.2rem' }} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.6, ease: easeOut }}>
+    69→   668→   668→              {photos[selectedPhoto].caption}
+    70→   669→   669→            </motion.p>
+    71→   670→   670→            <motion.button className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }} onClick={() => setSelectedPhoto(null)} whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.12)' }} whileTap={{ scale: 0.95 }}>
+    72→   671→   671→              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+    73→   672→   672→            </motion.button>
+    74→   673→   673→            <motion.button className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }} onClick={(e) => { e.stopPropagation(); setSelectedPhoto(selectedPhoto === 0 ? photos.length - 1 : selectedPhoto - 1) }} whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.1)' }}>
+    75→   674→   674→              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M15 18l-6-6 6-6" /></svg>
+    76→   675→   675→            </motion.button>
+    77→   676→   676→            <motion.button className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }} onClick={(e) => { e.stopPropagation(); setSelectedPhoto((selectedPhoto + 1) % photos.length) }} whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.1)' }}>
+    78→   677→   677→              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 18l6-6-6-6" /></svg>
+    79→   678→   678→            </motion.button>
+    80→   679→   679→          </motion.div>
+    81→   680→   680→        )}
+    82→   681→   681→      </AnimatePresence>
+    83→   682→   682→    </section>
+    84→   683→   683→  )
+    85→   684→   684→}
+    86→   685→   685→
+    87→   686→   686→// ═══════════════════════════════════════════════════════
+    88→   687→   687→// ─── #5 COUNTER SECTION ───
+    89→   688→   688→// ═══════════════════════════════════════════════════════
+    90→   689→   689→function CounterSection() {
+    91→   690→   690→  const ref = useRef(null)
+    92→   691→   691→  const isInView = useInView(ref, { once: true, margin: '-100px' })
+    93→   692→   692→  const [counts, setCounts] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+    94→   693→   693→
+    95→   694→   694→  useEffect(() => {
+    96→   695→   695→    if (!isInView) return
+    97→   696→   696→    const calc = () => {
+    98→   697→   697→      const now = new Date()
+    99→   698→   698→      const diff = now.getTime() - COUPLE_START_DATE.getTime()
+   100→   699→   699→      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+   101→   700→   700→      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+   102→   701→   701→      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+   103→   702→   702→      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+   104→   703→   703→      setCounts({ days, hours, minutes, seconds })
+   105→   704→   704→    }
+   106→   705→   705→    calc()
+   107→   706→   706→    const interval = setInterval(calc, 1000)
+   108→   707→   707→    return () => clearInterval(interval)
+   109→   708→   708→  }, [isInView])
+   110→   709→   709→
+   111→   710→   710→  const units = [
+   112→   711→   711→    { value: counts.days, label: 'jours' },
+   113→   712→   712→    { value: counts.hours, label: 'heures' },
+   114→   713→   713→    { value: counts.minutes, label: 'minutes' },
+   115→   714→   714→    { value: counts.seconds, label: 'secondes' },
+   116→   715→   715→  ]
+   117→   716→   716→
+   118→   717→   717→  return (
+   119→   718→   718→    <section ref={ref} className="relative px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+   120→   719→   719→      <SectionHeading eyebrow="depuis le premier jour" title="Notre Histoire Continue" />
+   121→   720→   720→      <div className="flex justify-center gap-6 md:gap-10">
+   122→   721→   721→        {units.map((unit, i) => (
+   123→   722→   722→          <motion.div
+   124→   723→   723→            key={unit.label}
+   125→   724→   724→            className="text-center"
+   126→   725→   725→            initial={{ opacity: 0, y: 25 }}
+   127→   726→   726→            whileInView={{ opacity: 1, y: 0 }}
+   128→   727→   727→            viewport={{ once: true }}
+   129→   728→   728→            transition={{ duration: 0.8, delay: i * 0.12, ease: easeOutExpo }}
+   130→   729→   729→          >
+   131→   730→   730→            <motion.span
+   132→   731→   731→              className="block tabular-nums"
+   133→   732→   732→              style={{
+   134→   733→   733→                ...display,
+   135→   734→   734→                color: c.accent,
+   136→   735→   735→                fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+   137→   736→   736→                fontWeight: 300,
+   138→   737→   737→                lineHeight: 1,
+   139→   738→   738→                letterSpacing: '0.02em',
+   140→   739→   739→              }}
+   141→   740→   740→            >
+   142→   741→   741→              {String(unit.value).padStart(2, '0')}
+   143→   742→   742→            </motion.span>
+   144→   743→   743→            <span
+   145→   744→   744→              className="block mt-1.5 uppercase"
+   146→   745→   745→              style={{ ...display, color: c.inkFaint, fontSize: '0.7rem', letterSpacing: '0.15em', fontWeight: 400 }}
+   147→   746→   746→            >
+   148→   747→   747→              {unit.label}
+   149→   748→   748→            </span>
+   150→   749→   749→          </motion.div>
+   151→   750→   750→        ))}
+   152→   751→   751→      </div>
+   153→   752→   752→      <motion.p
+   154→   753→   753→        className="text-center mt-10"
+   155→   754→   754→        style={{ ...script, color: c.inkFaint, fontSize: '1.1rem' }}
+   156→   755→   755→        initial={{ opacity: 0 }}
+   157→   756→   756→        whileInView={{ opacity: 1 }}
+   158→   757→   757→        viewport={{ once: true }}
+   159→   758→   758→        transition={{ duration: 1, delay: 0.6 }}
+   160→   759→   759→      >
+   161→   760→   760→        et chaque seconde est un cadeau
+   162→   761→   761→      </motion.p>
+   163→   762→   762→    </section>
+   164→   763→   763→  )
+   165→   764→   764→}
+   166→   765→   765→
+   167→   766→   766→// ═══════════════════════════════════════════════════════
+   168→   767→   767→// ─── #3 ENVELOPE SECTION ───
+   169→   768→   768→// ═══════════════════════════════════════════════════════
+   170→   769→   769→function EnvelopeSection() {
+   171→   770→   770→  const [isOpen, setIsOpen] = useState(false)
+   172→   771→   771→  const ref = useRef(null)
+   173→   772→   772→  const isInView = useInView(ref, { once: true, margin: '-100px' })
+   174→   773→   773→
+   175→   774→   774→  useEffect(() => {
+   176→   775→   775→    if (isInView) {
+   177→   776→   776→      const timer = setTimeout(() => setIsOpen(true), 800)
+   178→   777→   777→      return () => clearTimeout(timer)
+   179→   778→   778→    }
+   180→   779→   779→  }, [isInView])
+   181→   780→   780→
+   182→   781→   781→  return (
+   183→   782→   782→    <section ref={ref} className="relative flex items-center justify-center px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+   184→   783→   783→      <div className="relative w-full max-w-md mx-auto" style={{ perspective: '1000px' }}>
+   185→   784→   784→        {/* Envelope body */}
+   186→   785→   785→        <motion.div
+   187→   786→   786→          className="relative overflow-hidden"
+   188→   787→   787→          style={{
+   189→   788→   788→            background: 'linear-gradient(135deg, rgba(40,20,25,0.6), rgba(25,10,15,0.8))',
+   190→   789→   789→            border: '1px solid rgba(255,80,100,0.08)',
+   191→   790→   790→            borderRadius: '4px',
+   192→   791→   791→            minHeight: '280px',
+   193→   792→   792→          }}
+   194→   793→   793→          initial={{ opacity: 0, y: 30 }}
+   195→   794→   794→          whileInView={{ opacity: 1, y: 0 }}
+   196→   795→   795→          viewport={{ once: true }}
+   197→   796→   796→          transition={{ duration: 1, ease: easeOutExpo }}
+   198→   797→   797→        >
+   199→   798→   798→          {/* Letter */}
+   200→   799→   799→          <motion.div
+   201→   800→   800→            className="p-8 md:p-10 relative z-10"
+   202→   801→   801→            initial={{ y: 0 }}
+   203→   802→   802→            animate={isOpen ? { y: -20 } : { y: 0 }}
+   204→   803→   803→            transition={{ duration: 1.2, ease: easeOutExpo }}
+   205→   804→   804→          >
+   206→   805→   805→            <p style={{ ...script, color: c.ink, fontSize: 'clamp(1.2rem, 2vw, 1.5rem)', marginBottom: '1rem' }}>
+   207→   806→   806→              Ma chère Roxane,
+   208→   807→   807→            </p>
+   209→   808→   808→            <p className="leading-relaxed" style={{ ...display, color: c.inkDim, fontSize: 'var(--text-body)', fontWeight: 300, letterSpacing: '0.01em', maxWidth: '55ch' }}>
+   210→   809→   809→              Si tu lis ces mots, c&apos;est que tu es la personne la plus importante de ma vie.
+   211→   810→   810→              Chaque jour à tes côtés est un cadeau que je ne mérite pas, mais que je chéris plus que tout.
+   212→   811→   811→              Tu es mon refuge, ma force, et la raison pour laquelle je crois en l&apos;amour.
+   213→   812→   812→            </p>
+   214→   813→   813→            <p className="mt-6" style={{ ...script, color: c.accentSoft, fontSize: 'clamp(1rem, 1.5vw, 1.2rem)' }}>
+   215→   814→   814→              À toi, pour toujours.
+   216→   815→   815→            </p>
+   217→   816→   816→          </motion.div>
+   218→   817→   817→
+   219→   818→   818→          {/* Envelope flap */}
+   220→   819→   819→          <div className="absolute top-0 left-0 right-0 overflow-hidden" style={{ height: '140px', zIndex: isOpen ? 5 : 20 }}>
+   221→   820→   820→            <motion.div
+   222→   821→   821→              className="w-0 h-0"
+   223→   822→   822→              style={{
+   224→   823→   823→                marginLeft: 'auto',
+   225→   824→   824→                marginRight: 'auto',
+   226→   825→   825→                borderLeft: '200px solid transparent',
+   227→   826→   826→                borderRight: '200px solid transparent',
+   228→   827→   827→                borderTop: '140px solid rgba(50,25,35,0.95)',
+   229→   828→   828→                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+   230→   829→   829→                transformOrigin: 'top center',
+   231→   830→   830→              }}
+   232→   831→   831→              initial={{ rotateX: 0 }}
+   233→   832→   832→              animate={isOpen ? { rotateX: 180 } : { rotateX: 0 }}
+   234→   833→   833→              transition={{ duration: 1, ease: easeOutExpo }}
+   235→   834→   834→            />
+   236→   835→   835→          </div>
+   237→   836→   836→        </motion.div>
+   238→   837→   837→      </div>
+   239→   838→   838→    </section>
+   240→   839→   839→  )
+   241→   840→   840→}
+   242→   841→   841→
+   243→   842→   842→// ═══════════════════════════════════════════════════════
+   244→   843→   843→// ─── POEM SECTION ───
+   245→   844→   844→// ═══════════════════════════════════════════════════════
+   246→   845→   845→function PoemLine({ children, delay = 0, highlight = false }: { children: string; delay?: number; highlight?: boolean }) {
+   247→   846→   846→  const ref = useRef(null)
+   248→   847→   847→  const isInView = useInView(ref, { once: true, margin: '-50px' })
+   249→   848→   848→  return (
+   250→   849→   849→    <motion.p
+   251→   850→   850→      ref={ref}
+   252→   851→   851→      className="text-center"
+   253→   852→   852→      style={{
+   254→   853→   853→        ...display,
+   255→   854→   854→        fontSize: highlight ? 'clamp(1.1rem, 1.5vw, 1.3rem)' : 'var(--text-body)',
+   256→   855→   855→        letterSpacing: highlight ? '0.03em' : '0.015em',
+   257→   856→   856→        lineHeight: highlight ? 1.9 : 2,
+   258→   857→   857→        fontWeight: highlight ? 500 : 300,
+   259→   858→   858→        color: highlight ? c.ink : c.inkDim,
+   260→   859→   859→      }}
+   261→   860→   860→      initial={{ opacity: 0.15, y: 12, filter: 'blur(4px)' }}
+   262→   861→   861→      animate={isInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+   263→   862→   862→      transition={{ duration: 1.2, delay, ease: easeOutExpo }}
+   264→   863→   863→    >
+   265→   864→   864→      {children}
+   266→   865→   865→    </motion.p>
+   267→   866→   866→  )
+   268→   867→   867→}
+   269→   868→   868→
+   270→   869→   869→function PoemSection() {
+   271→   870→   870→  const ref = useRef(null)
+   272→   871→   871→  const isInView = useInView(ref, { once: true, margin: '-100px' })
+   273→   872→   872→  return (
+   274→   873→   873→    <section id="poeme" className="relative flex flex-col items-center justify-center px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+   275→   874→   874→      <motion.div
+   276→   875→   875→        ref={ref}
+   277→   876→   876→        className="absolute w-[350px] h-[350px] md:w-[500px] md:h-[500px] rounded-full pointer-events-none"
+   278→   877→   877→        style={{ background: 'radial-gradient(circle, rgba(180,40,80,0.06) 0%, transparent 70%)', filter: 'blur(60px)' }}
+   279→   878→   878→        initial={{ opacity: 0, scale: 0.5 }}
+   280→   879→   879→        animate={isInView ? { opacity: 1, scale: 1 } : {}}
+   281→   880→   880→        transition={{ duration: 2, ease: easeOutExpo }}
+   282→   881→   881→      />
+   283→   882→   882→      <SectionHeading eyebrow="mots du cœur" title="Mon Poème pour Toi" />
+   284→   883→   883→      <div className="max-w-lg space-y-3 relative z-10">
+   285→   884→   884→        <PoemLine delay={0.2}>Roxane, dans le silence de la nuit,</PoemLine>
+   286→   885→   885→        <PoemLine delay={0.4}>je murmure ton nom dans le vent,</PoemLine>
+   287→   886→   886→        <PoemLine delay={0.6}>et chaque étoile qui s&apos;allume</PoemLine>
+   288→   887→   887→        <PoemLine delay={0.8}>me rappelle que tu existes.</PoemLine>
+   289→   888→   888→        <div className="py-4" />
+   290→   889→   889→        <PoemLine delay={1.1}>Tes yeux sont deux océans</PoemLine>
+   291→   890→   890→        <PoemLine delay={1.3}>où je voudrais me noyer pour toujours,</PoemLine>
+   292→   891→   891→        <PoemLine delay={1.5}>ton sourire est le soleil</PoemLine>
+   293→   892→   892→        <PoemLine delay={1.7}>qui réchauffe mes jours les plus froids.</PoemLine>
+   294→   893→   893→        <div className="py-4" />
+   295→   894→   894→        <PoemLine delay={2.0}>Chaque seconde loin de toi, Roxane,</PoemLine>
+   296→   895→   895→        <PoemLine delay={2.2}>est une éternité qui me dévore,</PoemLine>
+   297→   896→   896→        <PoemLine delay={2.4}>et chaque instant à tes côtés</PoemLine>
+   298→   897→   897→        <PoemLine delay={2.6}>est un paradis que je ne veux pas quitter.</PoemLine>
+   299→   898→   898→        <div className="py-4" />
+   300→   899→   899→        <PoemLine delay={2.9} highlight>Roxane, tu es la plus belle histoire</PoemLine>
+   301→   900→   900→        <PoemLine delay={3.1} highlight>que la vie m&apos;ait jamais offerte.</PoemLine>
+   302→   901→   901→      </div>
+   303→   902→   902→    </section>
+   304→   903→   903→  )
+   305→   904→   904→}
+   306→   905→   905→
+   307→   906→   906→// ═══════════════════════════════════════════════════════
+   308→   907→   907→// ─── #7 PROMISES SECTION ───
+   309→   908→   908→// ═══════════════════════════════════════════════════════
+   310→   909→   909→function PromisesSection() {
+   311→   910→   910→  const promises = [
+   312→   911→   911→    'Je promets de te faire rire chaque jour, même quand tout va mal.',
+   313→   912→   912→    'Je promets d\'être ton refuge quand le monde sera trop lourd.',
+   314→   913→   913→    'Je promets de t\'écouter, vraiment t\'écouter, même à 3h du matin.',
+   315→   914→   914→    'Je promets de te choisir, encore et encore, chaque matin.',
+   316→   915→   915→    'Je promets de danser avec toi dans la cuisine, même sans musique.',
+   317→   916→   916→    'Je promets que ton cœur sera toujours en sécurité avec moi.',
+   318→   917→   917→  ]
+   319→   918→   918→
+   320→   919→   919→  return (
+   321→   920→   920→    <section className="relative px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+   322→   921→   921→      <SectionHeading eyebrow="mes vœux pour toi" title="Mes Promesses" />
+   323→   922→   922→      <div className="max-w-lg mx-auto space-y-8">
+   324→   923→   923→        {promises.map((promise, i) => (
+   325→   924→   924→          <motion.div
+   326→   925→   925→            key={i}
+   327→   926→   926→            className="relative pl-6"
+   328→   927→   927→            style={{
+   329→   928→   928→              borderLeft: `1px solid rgba(255,80,100,${0.08 + (i / promises.length) * 0.15})`,
+   330→   929→   929→            }}
+   331→   930→   930→            initial={{ opacity: 0.15, x: -15 }}
+   332→   931→   931→            whileInView={{ opacity: 1, x: 0 }}
+   333→   932→   932→            viewport={{ once: true, margin: '-20px' }}
+   334→   933→   933→            transition={{ duration: 0.8, delay: i * 0.1, ease: easeOutExpo }}
+   335→   934→   934→          >
+   336→   935→   935→            <p
+   337→   936→   936→              className="leading-relaxed italic"
+   338→   937→   937→              style={{
+   339→   938→   938→                ...display,
+   340→   939→   939→                color: c.inkDim,
+   341→   940→   940→                fontSize: 'var(--text-body)',
+   342→   941→   941→                fontWeight: 400,
+   343→   942→   942→                letterSpacing: '0.01em',
+   344→   943→   943→              }}
+   345→   944→   944→            >
+   346→   945→   945→              &ldquo;{promise}&rdquo;
+   347→   946→   946→            </p>
+   348→   947→   947→          </motion.div>
+   349→   948→   948→        ))}
+   350→   949→   949→      </div>
+   351→   950→   950→    </section>
+   352→   951→   951→  )
+   353→   952→   952→}
+   354→   953→   953→
+   355→   954→   954→// ═══════════════════════════════════════════════════════
+   356→   955→   955→// ─── REASONS SECTION ───
+   357→   956→   956→// ═══════════════════════════════════════════════════════
+   358→   957→   957→function ReasonsSection() {
+   359→   958→   958→  const reasons = [
+   360→   959→   959→    'Ton rire qui illumine ma journée entière, Roxane',
+   361→   960→   960→    'Ta douceur qui apaise mon cœur',
+   362→   961→   961→    'Ta passion qui me inspire chaque jour',
+   363→   962→   962→    'La façon dont tu me fais sentir vivant',
+   364→   963→   963→    'Ton regard qui me fait fondre',
+   365→   964→   964→    'Chaque moment avec toi est un trésor',
+   366→   965→   965→    'Tes câlins, mon refuge préféré',
+   367→   966→   966→    'Tes baisers, ma drogue préférée',
+   368→   967→   967→  ]
+   369→   968→   968→  return (
+   370→   969→   969→    <section id="raisons" className="relative px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+   371→   970→   970→      <SectionHeading eyebrow="parce que tu mérites de savoir" title="Pourquoi Je T&apos;aime" />
+   372→   971→   971→      <div className="max-w-lg mx-auto relative">
+   373→   972→   972→        <motion.div
+   374→   973→   973→          className="absolute left-3 top-0 bottom-0 w-px"
+   375→   974→   974→          style={{ background: `linear-gradient(to bottom, transparent, ${c.line}, ${c.line}, transparent)` }}
+   376→   975→   975→          initial={{ scaleY: 0 }}
+   377→   976→   976→          whileInView={{ scaleY: 1 }}
+   378→   977→   977→          viewport={{ once: true }}
+   379→   978→   978→          transition={{ duration: 2, ease: easeOut }}
+   380→   979→   979→        />
+   381→   980→   980→        <div className="space-y-6">
+   382→   981→   981→          {reasons.map((reason, i) => (
+   383→   982→   982→            <motion.div
+   384→   983→   983→              key={i}
+   385→   984→   984→              className="relative pl-10 md:pl-12"
+   386→   985→   985→              initial={{ opacity: 0.15, x: -12 }}
+   387→   986→   986→              whileInView={{ opacity: 1, x: 0 }}
+   388→   987→   987→              viewport={{ once: true, margin: '-20px' }}
+   389→   988→   988→              transition={{ duration: 0.8, delay: i * 0.08, ease: easeOutExpo }}
+   390→   989→   989→            >
+   391→   990→   990→              <motion.div
+   392→   991→   991→                className="absolute left-[5px] md:left-[7px] top-[7px] w-2 h-2 rounded-full"
+   393→   992→   992→                style={{ background: c.accent }}
+   394→   993→   993→                whileInView={{ scale: [0, 1.4, 1] }}
+   395→   994→   994→                viewport={{ once: true }}
+   396→   995→   995→                transition={{ duration: 0.4, delay: i * 0.08 + 0.1, ease: easeOut }}
+   397→   996→   996→              />
+   398→   997→   997→              <p className="leading-relaxed" style={{ ...display, color: c.inkDim, fontSize: 'var(--text-body)', fontWeight: 400, letterSpacing: '0.01em' }}>
+   399→   998→   998→                {reason}
+   400→   999→   999→              </p>
+   401→  1000→  1000→            </motion.div>
+   402→  1001→  1001→          ))}
+   403→  1002→  1002→        </div>
+   404→  1003→  1003→      </div>
+   405→  1004→  1004→    </section>
+   406→  1005→  1005→  )
+   407→  1006→  1006→}
+   408→  1007→  1007→
+   409→  1008→  1008→// ═══════════════════════════════════════════════════════
+   410→  1009→  1009→// ─── TIMELINE SECTION ───
+   411→  1010→  1010→// ═══════════════════════════════════════════════════════
+   412→  1011→  1011→function TimelineSection() {
+   413→  1012→  1012→  const moments = [
+   414→  1013→  1013→    { title: 'Le jour où on s\'est rencontrés', text: 'Le jour où tout a commencé, où le monde a changé de couleur grâce à toi, Roxane.' },
+   415→  1014→  1014→    { title: 'Notre premier baiser', text: 'Ce moment magique où le temps s\'est arrêté, où nos lèvres se sont trouvées.' },
+   416→  1015→  1015→    { title: 'Notre première danse', text: 'Enveloppés l\'un dans l\'autre, le monde entier a disparu autour de nous.' },
+   417→  1016→  1016→    { title: 'Nos rires partagés', text: 'Ces éclats de rire qui résonnent encore dans ma mémoire, ma musique préférée.' },
+   418→  1017→  1017→  ]
+   419→  1018→  1018→  return (
+   420→  1019→  1019→    <section id="moments" className="relative px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+   421→  1020→  1020→      <SectionHeading eyebrow="gravés dans ma mémoire" title="Nos Plus Beaux Moments" />
+   422→  1021→  1021→      <div className="max-w-md mx-auto relative">
+   423→  1022→  1022→        <motion.div
+   424→  1023→  1023→          className="absolute left-3 md:left-4 top-0 bottom-0 w-px"
+   425→  1024→  1024→          style={{ background: `linear-gradient(to bottom, transparent, ${c.line}, ${c.line}, transparent)` }}
+   426→  1025→  1025→          initial={{ scaleY: 0 }}
+   427→  1026→  1026→          whileInView={{ scaleY: 1 }}
+   428→  1027→  1027→          viewport={{ once: true }}
+   429→  1028→  1028→          transition={{ duration: 2, ease: easeOut }}
+   430→  1029→  1029→        />
+   431→  1030→  1030→        <div className="space-y-14">
+   432→  1031→  1031→          {moments.map((moment, i) => (
+   433→  1032→  1032→            <motion.div
+   434→  1033→  1033→              key={i}
+   435→  1034→  1034→              className="relative pl-12 md:pl-14"
+   436→  1035→  1035→              initial={{ opacity: 0.15, x: -15 }}
+   437→  1036→  1036→              whileInView={{ opacity: 1, x: 0 }}
+   438→  1037→  1037→              viewport={{ once: true, margin: '-40px' }}
+   439→  1038→  1038→              transition={{ duration: 0.8, delay: 0.1, ease: easeOutExpo }}
+   440→  1039→  1039→            >
+   441→  1040→  1040→              <motion.div
+   442→  1041→  1041→                className="absolute left-[3px] md:left-[5px] top-1 w-3 h-3 rounded-full"
+   443→  1042→  1042→                style={{ background: 'rgba(255,50,80,0.12)', border: `1.5px solid ${c.accentSoft}` }}
+   444→  1043→  1043→                whileInView={{ scale: [0, 1.3, 1] }}
+   445→  1044→  1044→                viewport={{ once: true }}
+   446→  1045→  1045→                transition={{ duration: 0.4, delay: 0.25, ease: easeOut }}
+   447→  1046→  1046→              />
+   448→  1047→  1047→              <h3 style={{ ...display, color: c.ink, fontSize: 'var(--text-h3)', fontWeight: 500, letterSpacing: '0.01em', lineHeight: 1.3, marginBottom: '0.375rem' }}>
+   449→  1048→  1048→                {moment.title}
+   450→  1049→  1049→              </h3>
+   451→  1050→  1050→              <p style={{ ...display, color: c.inkFaint, fontSize: 'var(--text-body)', fontWeight: 300, letterSpacing: '0.01em', maxWidth: '55ch', lineHeight: 1.6 }}>
+   452→  1051→  1051→                {moment.text}
+   453→  1052→  1052→              </p>
+   454→  1053→  1053→            </motion.div>
+   455→  1054→  1054→          ))}
+   456→  1055→  1055→        </div>
+   457→  1056→  1056→      </div>
+   458→  1057→  1057→    </section>
+   459→  1058→  1058→  )
+   460→  1059→  1059→}
+   461→  1060→  1060→
+   462→  1061→  1061→// ═══════════════════════════════════════════════════════
+   463→  1062→  1062→// ─── NOTRE CHANSON (visible audio player section) ───
+   464→  1063→  1063→// ═══════════════════════════════════════════════════════
+   465→  1064→  1064→function SongSection() {
+   466→  1065→  1065→  const audioRef = useRef<HTMLAudioElement>(null)
+   467→  1066→  1066→  const [isPlaying, setIsPlaying] = useState(false)
+   468→  1067→  1067→  const [progress, setProgress] = useState(0)
+   469→  1068→  1068→
+   470→  1069→  1069→  useEffect(() => {
+   471→  1070→  1070→    const audio = audioRef.current
+   472→  1071→  1071→    if (!audio) return
+   473→  1072→  1072→    const update = () => {
+   474→  1073→  1073→      if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100)
+   475→  1074→  1074→    }
+   476→  1075→  1075→    audio.addEventListener('timeupdate', update)
+   477→  1076→  1076→    audio.addEventListener('ended', () => setIsPlaying(false))
+   478→  1077→  1077→    return () => { audio.removeEventListener('timeupdate', update) }
+   479→  1078→  1078→  }, [])
+   480→  1079→  1079→
+   481→  1080→  1080→  const toggle = () => {
+   482→  1081→  1081→    const audio = audioRef.current
+   483→  1082→  1082→    if (!audio) return
+   484→  1083→  1083→    if (isPlaying) { audio.pause() } else { audio.play().catch(() => {}) }
+   485→  1084→  1084→    setIsPlaying(!isPlaying)
+   486→  1085→  1085→  }
+   487→  1086→  1086→
+   488→  1087→  1087→  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+   489→  1088→  1088→    const audio = audioRef.current
+   490→  1089→  1089→    if (!audio || !audio.duration) return
+   491→  1090→  1090→    const rect = e.currentTarget.getBoundingClientRect()
+   492→  1091→  1091→    const pct = (e.clientX - rect.left) / rect.width
+   493→  1092→  1092→    audio.currentTime = pct * audio.duration
+   494→  1093→  1093→  }
+   495→  1094→  1094→
+   496→  1095→  1095→  return (
+   497→  1096→  1096→    <section className="relative px-6" style={{ paddingTop: 'var(--space-section)', paddingBottom: 'var(--space-section)' }}>
+   498→  1097→  1097→      <SectionHeading eyebrow="notre mélodie" title="Notre Chanson" />
+   499→  1098→  1098→      <div className="max-w-sm mx-auto">
+   500→  1099→  1099→        <audio ref={audioRef} src="/music/romance.mp3" preload="metadata" />
+
+[showing lines 1-500 of 502; use offset=501 with limit to continue reading]
